@@ -1,0 +1,77 @@
+app:
+  # alist配置
+  alist:
+    enabled: false
+    token: alist-39c5876b-956d-4f2c-8bd3-e280439eab43YcXcivJ6J3oHzgXVItnIpQAcG7goPpUIX42HP2TClK06rhbc3mAyp3l7sb8AlTkT
+    intervalMinutes: 60
+    url: http://192.168.2.2:5244
+    mediaUrl: http://192.168.2.2:5244/d/115网盘  # 视频播放地址
+    base-monitor-path:
+      - /夸克网盘/连载电视
+      - /夸克网盘/连载动漫
+    monitorPath:
+      - /夸克网盘/连载动漫/斗罗大陆Ⅱ绝世唐门 (2023)/Season 1
+      - /夸克网盘/连载动漫/斗破苍穹 (2017)/Season 5
+      - /夸克网盘/连载动漫/吞噬星空 (2020)/Season 1
+      - /夸克网盘/连载动漫/完美世界 (2021)/Season 1
+      - /夸克网盘/连载动漫/遮天 (2023)/Season 1
+    scrapPath:
+      "[斗罗大陆2绝世唐门]": /115网盘/未刮削/连载动漫/斗罗大陆Ⅱ绝世唐门 (2023)/Season 1
+      "[斗破苍穹]": /115网盘/未刮削/连载动漫/斗破苍穹 (2017)/Season 5
+      "[吞噬星空]" : /115网盘/未刮削/连载动漫/吞噬星空 (2020)/Season 1
+      "[完美世界]": /115网盘/未刮削/连载动漫/完美世界 (2021)/Season 1
+      "[遮天]": /115网盘/未刮削/连载动漫/遮天 (2023)/Season 1
+    serializedTvShow:
+      "[斗罗大陆Ⅱ绝世唐门 (2023)]": /115网盘/动漫/国漫/斗罗大陆Ⅱ绝世唐门 (2023)/Season 1
+      "[斗破苍穹 (2017)]": /115网盘/动漫/国漫/斗破苍穹 (2017)/Season 5
+      "[吞噬星空 (2020)]": /115网盘/动漫/国漫/吞噬星空 (2020)/Season 1
+      "[完美世界 (2021)]": /115网盘/动漫/国漫/完美世界 (2021)/Season 1
+      "[遮天 (2023)]": /115网盘/动漫/国漫/遮天 (2023)/Season 1
+  # 服务器配置
+  server:
+    basePath: /mnt/strm/115网盘
+  # 115网盘配置
+  client115:
+    enabled: false
+    intervalMinutes: 30
+    cookie: UID=341890318_R2_1731548315;CID=0af3d63bf63a259a30c3a33207f3b292;SEID=7456fe87bf1a5a11716b3edd604b23579e2bb912f61295c7bf708a5551809c13ac40d5f3b7f2360682f6ab8e5b965231ce109f2bc5634555527751c7
+    ignoreFolders:
+      - /未刮削
+      - /音乐
+      - /云下载
+      - /我的接收
+      - /游戏
+  # tinymediamanger配置
+  ttm:
+    url: http://192.168.2.2:7878/api/tvshows
+    apiKey: 3684ce7c-8917-4a75-af06-6be611bafbe5
+  # cd2配置
+  cloud-drive:
+    url: http://192.168.2.2:19798
+    username: 1144804894@qq.com
+    password: zq19970525
+
+feign:
+  okhttp:
+    enabled: true
+http:
+  logLevel: body
+
+spring:
+  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://192.168.30.78:3306/media?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:h2:file:./db/media;AUTO_RECONNECT=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      data-locations: classpath:config/init.sql
+      mode: always
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: true
+        web-admin-password: zq19970525
