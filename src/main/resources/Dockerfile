@@ -8,7 +8,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir -U clouddrive
 
 #添加jar包
-COPY sgys-util-strm-1.3.jar app.jar
+COPY sgys-util-strm-1.0.jar app.jar
 #添加logback配置文件
 COPY logback.xml config/logback.xml
 
