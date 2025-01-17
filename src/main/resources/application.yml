@@ -67,8 +67,8 @@ spring:
     driver-class-name: org.h2.Driver
   sql:
     init:
-      data-locations: classpath:config/init.sql
-      mode: always
+      schema-locations: classpath:config/init.sql
+      mode: never
   h2:
     console:
       enabled: true

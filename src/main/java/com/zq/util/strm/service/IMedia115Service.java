@@ -33,7 +33,8 @@ public interface IMedia115Service extends IService<Media115> {
      * 查询列表通过SHA1
      *
      * @param sha1 SHA1
+     * @param name 名字
      * @return {@link Media115 }
      */
-    Media115 getBySha1(String sha1);
+    Media115 getBySha1(String sha1, String name);
 }

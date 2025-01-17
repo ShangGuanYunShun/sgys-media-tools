@@ -52,12 +52,14 @@ public class Media115ServiceImpl extends ServiceImpl<Media115Mapper, Media115> i
      * 查询列表通过SHA1
      *
      * @param sha1 SHA1
+     * @param name 名字
      * @return {@link Media115 }
      */
     @Override
-    public Media115 getBySha1(String sha1) {
+    public Media115 getBySha1(String sha1, String name) {
         return media115Mapper.selectOne(Wrappers.lambdaQuery(Media115.class)
-                .eq(Media115::getSha1, sha1));
+                .eq(Media115::getSha1, sha1)
+                .eq(Media115::getFileName, name));
     }
 
     private void findDescendants(String fileId, List<Media115> descendants) {

@@ -137,7 +137,7 @@ public class Client115LifeMonitor {
                                     break;
                                 }
                             } else {
-                                media115 = media115Service.getBySha1(pendingProcessFile.getSha1().toUpperCase());
+                                media115 = media115Service.getBySha1(pendingProcessFile.getSha1().toUpperCase(), pendingProcessFile.getFileName());
                                 if (media115 == null) {
                                     break;
                                 }

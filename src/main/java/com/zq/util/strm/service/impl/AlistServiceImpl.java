@@ -6,6 +6,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.http.HttpUtil;
 import com.zq.common.domain.Result;
+import com.zq.common.util.CollectionUtil;
 import com.zq.common.util.ThreadUtil;
 import com.zq.util.strm.dto.HandleFileDTO;
 import com.zq.util.strm.dto.req.alist.CopyFileReqDTO;
@@ -43,6 +44,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static cn.hutool.core.date.DatePattern.UTC_MS_WITH_XXX_OFFSET_PATTERN;
 import static com.zq.common.util.CollectionUtil.anyMatch;
@@ -124,8 +127,10 @@ public class AlistServiceImpl implements IAlistService {
         Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(handleFile.getFolderPath(), false));
         // 已存在的剧集信息
         Set<String> existingEpisodes = convertSet(listFileResult.getCheckedData().getContent(), listFileRespDTO.Content::getName);
+        // 过滤重复的剧集
+        List<String> handleFiles = filterDuplicateEpisodes(handleFile.getFiles());
         // 遍历最新保存的剧集，检查是否已经存在
-        for (String file : handleFile.getFiles()) {
+        for (String file : handleFiles) {
             boolean isEpisodeExists = anyMatch(existingEpisodes, existingFile -> !existingFile.equals(file) && StrmUtil.areEpisodesEqual(existingFile, file));
             if (isEpisodeExists) {
                 log.info("当前剧集已存在：{}\n{}", handleFile.getFolderPath(), file);
@@ -280,5 +285,40 @@ public class AlistServiceImpl implements IAlistService {
             HttpUtil.downloadFile(configProperties.getAlist().getMediaUrl() + path, fullPath.toFile());
             log.info("下载文件：{}", path);
         }
+    }
+
+    /**
+     * 过滤所有重复的剧集文件名
+     *
+     * @param fileList 文件名列表
+     * @return 过滤后的文件名列表
+     */
+    public static List<String> filterDuplicateEpisodes(Set<String> fileList) {
+        // 用于存储已经处理过的剧集编号
+        Set<String> seenEpisodes = new HashSet<>();
+        // 用于存储过滤后的文件名
+        List<String> filteredList = new ArrayList<>();
+
+        // 正则表达式匹配剧集编号（如 S01E150）
+        Pattern pattern = Pattern.compile("S\\d{2}E\\d+");
+
+        for (String fileName : fileList) {
+            Matcher matcher = pattern.matcher(fileName);
+            if (matcher.find()) {
+                // 提取剧集编号
+                String episode = matcher.group();
+                if (!seenEpisodes.contains(episode)) {
+                    // 标记为已处理
+                    seenEpisodes.add(episode);
+                    // 添加到过滤后的列表
+                    filteredList.add(fileName);
+                }
+            } else {
+                // 如果没有剧集编号，直接添加到过滤后的列表
+                filteredList.add(fileName);
+            }
+        }
+
+        return filteredList;
     }
 }
