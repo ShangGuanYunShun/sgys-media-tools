@@ -123,7 +123,7 @@ public class Client115LifeMonitor {
                                     .setPath(filePath)
                                     .setFileName(pendingProcessFile.getFileName())
                                     .setPickCode(pendingProcessFile.getPickCode())
-                                    .setSha1(pendingProcessFile.getSha1().toUpperCase())
+                                    .setSha1(StrUtil.isNotBlank(pendingProcessFile.getSha1()) ? pendingProcessFile.getSha1() : null)
                                     .setExt(pendingProcessFile.getExt())
                             ;
                             media115Service.save(media115);
