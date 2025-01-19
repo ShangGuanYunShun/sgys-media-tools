@@ -139,7 +139,7 @@ public class AlistServiceImpl implements IAlistService {
             }
         }
         if (files.isEmpty()) {
-            log.info("当前剧集已全部存在,退出执行：{}\n{}", handleFile.getFolderPath(), files);
+            log.info("当前剧集已全部存在,退出执行：{}\n{}", handleFile.getFolderPath(), handleFiles);
             return;
         }
         // 2、刷新文件

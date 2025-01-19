@@ -172,28 +172,29 @@ public class Drive115 {
      */
     private void fetchAllFilesInDirectory(String cid, String parentPath, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
         FileListRespDTO fileListResponse = driver115Client.listFiles(cid, configProperties.getClient115().getLimit());
-        String lastCid = cid;
-        String lastCidPath = parentPath;
+        boolean isDic;
         for (FileListRespDTO.FileDataDTO file : fileListResponse.getData()) {
-            String filePath;
-            if (file.getCatalogId().equals(cid)) {
-                filePath = parentPath + "/" + file.getFileName();
+            String filePath = parentPath + "/" + file.getFileName();
+            // 多级目录
+            if (!file.getCatalogId().equals(cid)) {
+//                PendingProcessFileDTO pendingProcessFileDTO = new PendingProcessFileDTO();
+//                pendingProcessFileDTO.setFileId(file.getFileId())
+//                        .setFileName(file.getFileName())
+//                        .setPickCode(file.getPickCode())
+//                        .setSha1(file.getSha1())
+//                        .setFilePath(filePath)
+//                        .setParentId(file.getCatalogId())
+//                        .setExt(file.getExt())
+//                        .setIsDic(true)
+//                        .setBehaviorType(behaviorType)
+//                ;
+//                pendingProcessFiles.add(pendingProcessFileDTO);
+                isDic = true;
+                log.info("操作类型：{}，文件路径： {}", behaviorType, filePath);
+                fetchAllFilesInDirectory(file.getCatalogId(), filePath, behaviorType, pendingProcessFiles);
+//                return;
             } else {
-                // 多级目录
-                if (!file.getCatalogId().equals(lastCid)) {
-                    GetPathRespDTO getPathResponse = driver115Client.getFilePath(file.getCatalogId());
-                    StringJoiner fullPath = new StringJoiner("/");
-                    for (GetPathRespDTO.PathDTO path : getPathResponse.getPaths()) {
-                        if (Objects.equals(path.getFileId(), "0")) {
-                            continue;
-                        }
-                        fullPath.add(path.getFileName());
-                    }
-                    fullPath.add(getPathResponse.getFileName());
-                    lastCid = file.getCatalogId();
-                    lastCidPath = fullPath.toString();
-                }
-                filePath = lastCidPath + "/" + file.getFileName();
+                isDic = false;
             }
             PendingProcessFileDTO pendingProcessFileDTO = new PendingProcessFileDTO();
             pendingProcessFileDTO.setFileId(file.getFileId())
@@ -203,6 +204,7 @@ public class Drive115 {
                     .setFilePath(filePath)
                     .setParentId(file.getCatalogId())
                     .setExt(file.getExt())
+                    .setIsDic(isDic)
                     .setBehaviorType(behaviorType)
             ;
             pendingProcessFiles.add(pendingProcessFileDTO);

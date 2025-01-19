@@ -116,7 +116,10 @@ public class Client115LifeMonitor {
                             if (Files.exists(fullPath)) {
                                 continue;
                             }
-                            String filePath = downloadFileAndCreateStrm(path, pendingProcessFile.getPickCode());
+                            String filePath = pendingProcessFile.getFilePath();
+                            if (!pendingProcessFile.getIsDic()) {
+                                filePath = downloadFileAndCreateStrm(path, pendingProcessFile.getPickCode());
+                            }
                             media115 = new Media115();
                             media115.setFileId(pendingProcessFile.getFileId())
                                     .setParentId(pendingProcessFile.getParentId())

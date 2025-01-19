@@ -25,6 +25,11 @@ public class FileListRespDTO {
     private List<FileDataDTO> data;
 
     /**
+     * 路径列表，用于表示完整路径
+     */
+    private List<PathDTO> path;
+
+    /**
      * FileDataDTO 表示单个文件的数据。
      */
     @Getter
@@ -67,5 +72,25 @@ public class FileListRespDTO {
          */
         @JsonProperty("ico")
         private String ext;
+    }
+
+    /**
+     * PathDTO 表示路径中的单个路径节点。
+     */
+    @Getter
+    @Setter
+    @ToString
+    public static class PathDTO {
+
+
+        /**
+         * 目录 ID
+         */
+        private String cid;
+
+        /**
+         * 目录名
+         */
+        private String name;
     }
 }
