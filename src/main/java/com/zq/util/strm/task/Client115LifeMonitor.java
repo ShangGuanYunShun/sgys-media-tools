@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -100,7 +101,7 @@ public class Client115LifeMonitor {
     private long calculateStartTime() {
         return LocalDateTime.now()
                 .minusMinutes(configProperties.getClient115().getIntervalMinutes())
-                .toEpochSecond(java.time.ZoneOffset.UTC);
+                .toEpochSecond(ZoneOffset.of("+8"));
     }
 
     /**
