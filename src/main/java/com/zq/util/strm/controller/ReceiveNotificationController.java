@@ -1,10 +1,6 @@
 package com.zq.util.strm.controller;
 
-import cn.hutool.core.util.StrUtil;
 import com.zq.common.domain.Result;
-import com.zq.common.util.ThreadUtil;
-import com.zq.util.strm.dto.HandleFileDTO;
-import com.zq.util.strm.service.IAlistService;
 import com.zq.util.strm.service.IReceiveNotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,12 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author zhaoqiang

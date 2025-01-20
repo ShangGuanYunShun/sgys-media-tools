@@ -6,7 +6,6 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.http.HttpUtil;
 import com.zq.common.domain.Result;
-import com.zq.common.util.CollectionUtil;
 import com.zq.common.util.ThreadUtil;
 import com.zq.util.strm.dto.HandleFileDTO;
 import com.zq.util.strm.dto.req.alist.CopyFileReqDTO;
@@ -122,42 +121,50 @@ public class AlistServiceImpl implements IAlistService {
      */
     @Override
     public void copyFileQuarkTo115(HandleFileDTO handleFile) {
-        Set<String> files = new HashSet<>();
-        // 1、先判断是否已经存在当前剧集
+        // 1、获取目标文件夹下已存在的文件列表
         Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(handleFile.getFolderPath(), false));
-        // 已存在的剧集信息
         Set<String> existingEpisodes = convertSet(listFileResult.getCheckedData().getContent(), listFileRespDTO.Content::getName);
-        // 过滤重复的剧集
+        
+        // 2、过滤出需要复制的新文件
+        Set<String> newFiles = new HashSet<>();
         List<String> handleFiles = filterDuplicateEpisodes(handleFile.getFiles());
-        // 遍历最新保存的剧集，检查是否已经存在
         for (String file : handleFiles) {
-            boolean isEpisodeExists = anyMatch(existingEpisodes, existingFile -> !existingFile.equals(file) && StrmUtil.areEpisodesEqual(existingFile, file));
-            if (isEpisodeExists) {
-                log.info("当前剧集已存在：{}\n{}", handleFile.getFolderPath(), file);
+            boolean exists = anyMatch(existingEpisodes, 
+                existingFile -> !existingFile.equals(file) && StrmUtil.areEpisodesEqual(existingFile, file));
+            if (exists) {
+                log.info("剧集已存在: {}\n{}", handleFile.getFolderPath(), file);
             } else {
-                files.add(file);
+                newFiles.add(file);
             }
         }
-        if (files.isEmpty()) {
-            log.info("当前剧集已全部存在,退出执行：{}\n{}", handleFile.getFolderPath(), handleFiles);
+                
+        if (newFiles.isEmpty()) {
+            log.info("所有剧集已存在,无需复制: {}\n{}", handleFile.getFolderPath(), handleFiles);
             return;
         }
-        // 2、刷新文件
+        
+        // 3、刷新文件列表并准备复制
         alistClient.listFile(new ListFileReqDTO(handleFile.getFolderPath(), true));
-        CopyFileReqDTO quarkCopyFileReqDTO = new CopyFileReqDTO();
         String scrapPath = configProperties.getAlist().getScrapPath().get(FileUtil.getName(handleFile.getFolderPath()));
-        quarkCopyFileReqDTO.setSrcDir(handleFile.getFolderPath())
+        
+        // 4、执行跨盘复制
+        CopyFileReqDTO copyRequest = new CopyFileReqDTO();
+        copyRequest.setSrcDir(handleFile.getFolderPath())
                 .setDstDir(scrapPath)
-                .setNames(files)
-        ;
-        // 3、跨盘复制文件
-        alistClient.copyFile(quarkCopyFileReqDTO);
-        log.info("跨盘复制文件：{}-{} -> {}", handleFile.getFolderPath(), files, scrapPath);
+                .setNames(newFiles);
+                
+        alistClient.copyFile(copyRequest);
+        log.info("开始跨盘复制: {} -> {}, 文件列表: {}", handleFile.getFolderPath(), scrapPath, newFiles);
+        
+        // 5、启动复制监控任务
         AtomicBoolean copyTaskDone = new AtomicBoolean(false);
-        int index = taskIndex.addAndGet(1);
-        // 4、监控复制任务是否完成
-        int taskId = ThreadUtil.executeCycle(() -> copyFileMonitor(copyTaskDone, index, scrapPath), 5, ChronoUnit.MINUTES);
-        taskIds.put(index, taskId);
+        int taskIndex = this.taskIndex.addAndGet(1);
+        int taskId = ThreadUtil.executeCycle(
+            () -> copyFileMonitor(copyTaskDone, taskIndex, scrapPath), 
+            5, 
+            ChronoUnit.MINUTES
+        );
+        taskIds.put(taskIndex, taskId);
     }
 
     /**
@@ -166,6 +173,7 @@ public class AlistServiceImpl implements IAlistService {
     private void scrap() {
         List<TtmReqDTO> ttmReqDTOList = new ArrayList<>();
         TtmReqDTO ttmReqDTO = new TtmReqDTO();
+
         ttmReqDTO.setAction(TtmAction.UPDATE)
                 .setScope(new TtmReqDTO.Scope(TtmScopeName.ALL, new ArrayList<>()));
         ttmReqDTOList.add(ttmReqDTO);
@@ -225,49 +233,101 @@ public class AlistServiceImpl implements IAlistService {
         }
     }
 
+    /**
+     * 监控文件复制进度
+     * 
+     * @param copyTaskDone 复制任务完成标志
+     * @param index 任务索引
+     * @param scrapPath 刮削路径
+     */
     private void copyFileMonitor(AtomicBoolean copyTaskDone, int index, String scrapPath) {
         // 获取复制任务列表
         Result<List<TaskRespDTO>> copyUndoneTaskListResult = alistClient.listCopyUndoneTask();
         log.debug("复制文件监视器：{}", copyUndoneTaskListResult.getCheckedData());
+        
+        // 检查任务是否完成
         if (copyUndoneTaskListResult.getCheckedData().isEmpty()) {
             copyTaskDone.set(true);
         }
-        if (copyTaskDone.get()) {
-            ThreadUtil.execute(() -> {
-                // 5、刷新一下cd2的目录
-                String[] script = {"python3", "/app/python/clouddrive_api.py",
-                        configProperties.getCloudDrive().getUrl(), configProperties.getCloudDrive().getUsername(), configProperties.getCloudDrive().getPassword(),
-                        "list_files", scrapPath};
-                log.info("执行python脚本：{}", Arrays.asList(script));
-                String execResult = RuntimeUtil.execForStr(script);
-                log.info("python执行结果：{}", execResult);
-                try {
-                    TimeUnit.SECONDS.sleep(30);
-                } catch (InterruptedException ignored) {
-                }
-                log.info("刮削文件：{}", scrapPath);
-                // 6、刮削文件
-                scrap();
-                // 7、移动文件
-                Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
-                Set<String> fileNames = convertSet(listFileResult.getCheckedData().getContent(),
-                        content -> !"season.nfo".equals(content.getName()),
-                        listFileRespDTO.Content::getName);
-                // 获取电视节目名称
-                String tvShowName = FileUtil.mainName(FileUtil.getParent(scrapPath, 1));
-                String targetPath = configProperties.getAlist().getSerializedTvShow().get(tvShowName);
-                MoveFileReqDTO moveFileReqDTO = new MoveFileReqDTO();
-                moveFileReqDTO.setSrcDir(scrapPath)
-                        .setDstDir(targetPath)
-                        .setNames(fileNames)
-                ;
-                log.info("移动文件：{}-{} -> {}", scrapPath, fileNames, targetPath);
-                alistClient.moveFile(moveFileReqDTO);
-                log.info("新增剧集处理完成：{}-{}", tvShowName, StrmUtil.getEpisodes(CollUtil.getFirst(fileNames)));
-            });
-            log.info("跨盘复制文件已完成，停止监听任务：{}-{}", taskIds.get(index), scrapPath);
-            ThreadUtil.stop(taskIds.get(index));
+        
+        if (!copyTaskDone.get()) {
+            return;
         }
+        
+        // 异步处理后续任务
+        ThreadUtil.execute(() -> processCompletedCopy(scrapPath));
+        
+        // 停止监听任务
+        log.info("跨盘复制文件已完成，停止监听任务：{}-{}", taskIds.get(index), scrapPath);
+        ThreadUtil.stop(taskIds.get(index));
+    }
+    
+    /**
+     * 处理复制完成后的任务
+     * 包括刷新目录、刮削文件和移动文件等操作
+     *
+     * @param scrapPath 刮削路径
+     */
+    private void processCompletedCopy(String scrapPath) {
+        // 刷新cd2目录
+        refreshCD2Directory(scrapPath);
+        
+        // 刮削文件
+        log.info("刮削文件：{}", scrapPath);
+        scrap();
+        
+        // 移动文件到目标目录
+        moveFilesToTarget(scrapPath);
+    }
+    
+    /**
+     * 刷新CD2目录
+     * 通过执行Python脚本来刷新目录内容
+     *
+     * @param scrapPath 需要刷新的目录路径
+     */
+    private void refreshCD2Directory(String scrapPath) {
+        String[] script = {"python3", "/app/python/clouddrive_api.py",
+                configProperties.getCloudDrive().getUrl(), 
+                configProperties.getCloudDrive().getUsername(), 
+                configProperties.getCloudDrive().getPassword(),
+                "list_files", scrapPath};
+                
+        log.info("执行python脚本：{}", Arrays.asList(script));
+        String execResult = RuntimeUtil.execForStr(script);
+        log.info("python执行结果：{}", execResult);
+        
+        try {
+            TimeUnit.SECONDS.sleep(30);
+        } catch (InterruptedException ignored) {
+        }
+    }
+    
+    /**
+     * 将文件移动到目标目录
+     * 获取文件列表并移动到对应的电视剧目录
+     *
+     * @param scrapPath 源文件路径
+     */
+    private void moveFilesToTarget(String scrapPath) {
+        Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
+        Set<String> fileNames = convertSet(listFileResult.getCheckedData().getContent(),
+                content -> !"season.nfo".equals(content.getName()),
+                listFileRespDTO.Content::getName);
+                
+        // 获取电视节目名称和目标路径
+        String tvShowName = FileUtil.mainName(FileUtil.getParent(scrapPath, 1));
+        String targetPath = configProperties.getAlist().getSerializedTvShow().get(tvShowName);
+        
+        // 构建移动请求
+        MoveFileReqDTO moveFileReqDTO = new MoveFileReqDTO()
+                .setSrcDir(scrapPath)
+                .setDstDir(targetPath)
+                .setNames(fileNames);
+                
+        log.info("移动文件：{}-{} -> {}", scrapPath, fileNames, targetPath);
+        alistClient.moveFile(moveFileReqDTO);
+        log.info("新增剧集处理完成：{}-{}", tvShowName, StrmUtil.getEpisodes(CollUtil.getFirst(fileNames)));
     }
 
     /**
