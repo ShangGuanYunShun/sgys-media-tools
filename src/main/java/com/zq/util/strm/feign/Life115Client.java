@@ -26,4 +26,16 @@ public interface Life115Client {
     @GetMapping("/life/life_list")
     LifeListRespDTO queryLifeList(@RequestParam("start_time") long startTime, @RequestParam("limit") int limit,@RequestParam("last_data") String lastData);
 
+    /**
+     * 调用 life_list 接口获取事件列表。
+     *
+     * @param startTime 起始时间戳
+     * @param endTime   结束时间戳
+     * @param limit     最大记录数
+     * @param lastData  上一条数据
+     * @return 包含事件列表的响应对象
+     */
+    @GetMapping("/life/life_list")
+    LifeListRespDTO queryLifeList(@RequestParam("start_time") long startTime, @RequestParam("end_time") long endTime, @RequestParam("limit") int limit,@RequestParam("last_data") String lastData);
+
 }
