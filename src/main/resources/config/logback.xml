@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <!--设置变量-->
-    <property name="log.name" value="sgys-util-strm"/>
+    <property name="log.name" value="sgys-media-tools"/>
     <property name="log.path" value="/app/logs"/>
 
     <!--输出INFO到文件-->
