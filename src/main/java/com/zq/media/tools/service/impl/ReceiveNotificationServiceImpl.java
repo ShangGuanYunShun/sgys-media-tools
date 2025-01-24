@@ -15,6 +15,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.zq.common.util.CollectionUtil.anyMatch;
+
 /**
  * @author zhaoqiang
  * @version 1.0
@@ -46,12 +48,15 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                 if (str.contains("/接收连载动漫") || str.contains("/接收连载电视")) {
                     // 设置文件夹路径
                     handleFileDTO.setFolderPath("/夸克网盘" + str);
-//                    handlePath.add("/夸克网盘" + str);
                     isFolderPathSet = true;
                 } else if (str.isEmpty() || "\"".equals(str)) {
                     // 处理结束，保存当前 DTO
-                    if (!handleFileDTO.getFiles().isEmpty() || handleFileDTO.getFolderPath() != null) {
-                        list.add(handleFileDTO);
+                    if (!handleFileDTO.getFiles().isEmpty() && handleFileDTO.getFolderPath() != null) {
+                        // 判断当前文件夹是否已经在list中存在
+                        HandleFileDTO finalHandleFileDTO = handleFileDTO;
+                        if (!anyMatch(list, dto -> dto.getFolderPath().equals(finalHandleFileDTO.getFolderPath()))) {
+                            list.add(handleFileDTO);
+                        }
                     }
                     handleFileDTO = createHandleFileDTO(); // 重置 DTO
                     isFolderPathSet = false;
