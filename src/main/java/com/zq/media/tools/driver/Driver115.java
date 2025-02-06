@@ -256,8 +256,10 @@ public class Driver115 {
      * @param behaviorType        行为类型
      * @param pendingProcessFiles 待处理文件列表
      */
+    @SneakyThrows
     private void fetchAllFilesInDirectory(String cid, String parentPath, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
         // 获取目录下的文件列表
+        TimeUnit.SECONDS.sleep(1);
         FileListRespDTO fileListResponse = driver115Client.listFiles(cid, configProperties.getClient115().getLimit());
 
         for (FileListRespDTO.FileDataDTO file : fileListResponse.getData()) {

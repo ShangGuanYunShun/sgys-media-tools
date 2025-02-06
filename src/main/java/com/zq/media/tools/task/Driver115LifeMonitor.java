@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "app.client115", name = "enabled", havingValue = "true")
-public class Client115LifeMonitor {
+public class Driver115LifeMonitor {
 
     private final Driver115 driver115;
     private final ConfigProperties configProperties;
