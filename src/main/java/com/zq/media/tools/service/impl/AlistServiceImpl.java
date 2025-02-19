@@ -300,6 +300,12 @@ public class AlistServiceImpl implements IAlistService {
                 
         log.info("移动文件：{}-{} -> {}", scrapPath, fileNames, targetPath);
         alistClient.moveFile(moveFileReqDTO);
+        // alist刷新115目录
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException ignored) {
+        }
+        alistClient.listFile(new ListFileReqDTO(targetPath, true));
         log.info("新增剧集处理完成：{}-{}", tvShowName, StrmUtil.getEpisodes(CollUtil.getFirst(fileNames)));
     }
 
