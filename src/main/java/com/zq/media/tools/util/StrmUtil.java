@@ -37,9 +37,8 @@ public class StrmUtil {
     public static String generateStrmFiles(Path filePath) {
         Path strmPath = Paths.get(configProperties.getServer().getBasePath(), filePath.getParent().toString(), FileUtil.mainName(filePath.getFileName().toString()) + ".strm");
         String videoRelativeUrl = configProperties.getAlist().getMediaUrl() + filePath.toString().replace("\\", "/").replace("//", "/");
-        String encodedUrl = URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8);
-        FileUtil.writeUtf8String(encodedUrl, strmPath.toString());
-        return Paths.get(filePath.getParent().toString(), FileUtil.mainName(filePath.getFileName().toString()) + ".strm").toString();
+        FileUtil.writeUtf8String(URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8), strmPath.toString());
+        return strmPath.toString();
     }
 
     /**

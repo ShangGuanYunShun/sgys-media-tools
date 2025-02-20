@@ -24,6 +24,16 @@ import java.util.Map;
 public class ConfigProperties {
 
     /**
+     * API 速率限制
+     */
+    private Integer apiRateLimit = 1;
+
+    /**
+     * 是否下载媒体文件
+     */
+    private Boolean downloadMediaFile = true;
+
+    /**
      * alist 配置
      */
     private Alist alist;
@@ -70,15 +80,16 @@ public class ConfigProperties {
          * 媒体 URL
          */
         private String mediaUrl;
-        /**
-         * 基本监控路径（用于刷新最新文件）
-         */
-        private List<String> baseMonitorPath;
 
         /**
-         * 监控路径
+         * 115网盘路径
          */
-        private List<String> monitorPath;
+        private String driver115Path;
+
+        /**
+         * 媒体路径
+         */
+        private List<String> mediaPath = new ArrayList<>();
 
         /**
          * 刮削路径
@@ -100,6 +111,11 @@ public class ConfigProperties {
          * 文件存放基本路径
          */
         private String basePath;
+
+        /**
+         * 115网盘本地路径
+         */
+        private String driver115Path;
     }
 
     @Getter
@@ -131,14 +147,25 @@ public class ConfigProperties {
     @Setter
     @ToString
     public static class Ttm {
+
+        private Boolean enabled;
+
         private String apiKey;
+
         private String url;
+
+        /**
+         * 刮削时间：秒
+         */
+        private Integer scrapTime = 300;
     }
 
     @Getter
     @Setter
     @ToString
     public static class CloudDrive {
+
+        private Boolean enabled;
 
         private String url;
 

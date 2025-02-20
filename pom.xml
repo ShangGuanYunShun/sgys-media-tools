@@ -62,11 +62,6 @@
 
         <dependency>
             <groupId>com.zq</groupId>
-            <artifactId>sgys-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.zq</groupId>
             <artifactId>sgys-core-web</artifactId>
         </dependency>
 

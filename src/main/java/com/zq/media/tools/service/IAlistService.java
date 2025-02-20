@@ -16,4 +16,11 @@ public interface IAlistService {
      * @param handleFile 处理文件
      */
     void copyFileQuarkTo115(HandleFileDTO handleFile);
+
+    /**
+     * 处理目录（创建 STRM 并下载文件）
+     *
+     * @param mediaPath 媒体路径
+     */
+    void processDic(String mediaPath);
 }

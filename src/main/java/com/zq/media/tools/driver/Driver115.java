@@ -111,7 +111,7 @@ public class Driver115 {
 
         // 分页获取所有数据
         while (StrUtil.isNotBlank(lifeListResponse.getData().getLastData())) {
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
             lifeListResponse = life115Client.queryLifeList(startTime, endTime, configProperties.getClient115().getLimit(),
                     lifeListResponse.getData().getLastData());
 
@@ -151,7 +151,7 @@ public class Driver115 {
         // 遍历处理每个文件项目
         for (LifeListRespDTO.ItemDTO item : behavior.getItems()) {
             // 每个文件处理间隔1秒
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
             String path = buildFullPath(item);
 
             // 检查是否在忽略列表中
@@ -259,7 +259,7 @@ public class Driver115 {
     @SneakyThrows
     private void fetchAllFilesInDirectory(String cid, String parentPath, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
         // 获取目录下的文件列表
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
         FileListRespDTO fileListResponse = driver115Client.listFiles(cid, configProperties.getClient115().getLimit());
 
         for (FileListRespDTO.FileDataDTO file : fileListResponse.getData()) {
@@ -402,11 +402,11 @@ public class Driver115 {
     private Path getFullPath(Path path) {
         boolean isVideoFile = StrmUtil.isVideoFile(path);
         if (isVideoFile) {
-            return Paths.get(configProperties.getServer().getBasePath(),
+            return Paths.get(configProperties.getServer().getDriver115Path(),
                     path.getParent().toString(),
                     FileUtil.mainName(path.getFileName().toString()) + ".strm");
         }
-        return Paths.get(configProperties.getServer().getBasePath(), path.toString());
+        return Paths.get(configProperties.getServer().getDriver115Path(), path.toString());
     }
 
     /**
@@ -462,7 +462,7 @@ public class Driver115 {
         }
 
         for (Media115 deleteFile : deleteFiles) {
-            FileUtil.del(Paths.get(configProperties.getServer().getBasePath() + deleteFile.getPath()));
+            FileUtil.del(Paths.get(configProperties.getServer().getDriver115Path() + deleteFile.getPath()));
             media115Service.removeById(deleteFile.getId());
             log.info("删除文件：{}", deleteFile.getPath());
             deleteFileCount++;
@@ -484,7 +484,7 @@ public class Driver115 {
                 renameFile.setPath(renamePath.toString());
                 media115Service.updateById(renameFile);
 
-                Path strmFilePath = Paths.get(configProperties.getServer().getBasePath(), renameFile.getPath());
+                Path strmFilePath = Paths.get(configProperties.getServer().getDriver115Path(), renameFile.getPath());
                 StrmUtil.writeStrmFiles(strmFilePath, Paths.get(pendingFile.getFilePath()).toString());
                 renameVideoCount++;
                 log.info("重命名文件：{}", renameFile.getPath());
@@ -502,22 +502,24 @@ public class Driver115 {
     @SneakyThrows
     private String downloadFileOrCreateStrm(Path path, String pickCode) {
         if (StrmUtil.isVideoFile(path)) {
-            String strmPath = StrmUtil.generateStrmFiles(path);
+            String strmPath = StrmUtil.generateStrmFiles(Paths.get(configProperties.getAlist().getDriver115Path() + path));
             log.info("生成strm文件: {}", strmPath);
             strmFileCount++;
             return strmPath;
         } else {
-            Map<String, String> map = getFileUrlAndCookies(pickCode);
-            if (!MapUtil.isEmpty(map)) {
-                String fileUrl = map.get("fileUrl");
-                String cookie = map.get("cookie");
-                // 等待1秒，防止风控
-                TimeUnit.SECONDS.sleep(1);
-                Path fullPath = Paths.get(configProperties.getServer().getBasePath(), path.toString());
-                StrmUtil.downloadFile(fileUrl, cookie, fullPath);
-                log.info("下载文件：{}", path);
-                nonStrmFileCount++;
-                return path.toString();
+            if (configProperties.getDownloadMediaFile()) {
+                Map<String, String> map = getFileUrlAndCookies(pickCode);
+                if (!MapUtil.isEmpty(map)) {
+                    String fileUrl = map.get("fileUrl");
+                    String cookie = map.get("cookie");
+                    // 等待1秒，防止风控
+                    TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
+                    Path fullPath = Paths.get(configProperties.getServer().getDriver115Path(), path.toString());
+                    StrmUtil.downloadFile(fileUrl, cookie, fullPath);
+                    log.info("下载文件：{}", configProperties.getServer().getDriver115Path() + "/" + path);
+                    nonStrmFileCount++;
+                    return path.toString();
+                }
             }
         }
         return null;
