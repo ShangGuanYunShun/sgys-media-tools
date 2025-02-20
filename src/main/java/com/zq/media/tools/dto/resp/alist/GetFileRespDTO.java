@@ -1,5 +1,6 @@
 package com.zq.media.tools.dto.resp.alist;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -21,13 +22,15 @@ public class GetFileRespDTO {
      */
     private String created;
 
+    @JsonProperty("hash_info")
     private HashInfo hashInfo;
 
     private String header;
     /**
      * 是否是文件夹
      */
-    private boolean isDir;
+    @JsonProperty("is_dir")
+    private Boolean isDir;
     /**
      * 修改时间
      */
@@ -55,7 +58,7 @@ public class GetFileRespDTO {
     /**
      * 大小
      */
-    private long size;
+    private Long size;
     /**
      * 缩略图
      */
@@ -63,7 +66,7 @@ public class GetFileRespDTO {
     /**
      * 类型
      */
-    private long type;
+    private Long type;
 
     @Getter
     @Setter

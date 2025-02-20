@@ -147,7 +147,7 @@ public class AlistServiceImpl implements IAlistService {
         Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(mediaPath, true));
         if (listFileResult.isSuccess()) {
             for (listFileRespDTO.Content content : listFileResult.getCheckedData().getContent()) {
-                if (content.isDir()) {
+                if (content.getIsDir()) {
                     // 构建子目录的完整路径
                     String subDirPath = Paths.get(mediaPath, content.getName()).toString();
                     processDic(subDirPath);
@@ -314,7 +314,7 @@ public class AlistServiceImpl implements IAlistService {
                 } catch (InterruptedException ignored) {
                 }
                 HttpUtil.downloadFile(configProperties.getAlist().getMediaUrl() + path, fullPath.toFile());
-                log.info("下载文件：{}", path);
+                log.info("下载文件：{}", fullPath);
             }
         }
     }

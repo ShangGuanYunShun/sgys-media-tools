@@ -1,5 +1,6 @@
 package com.zq.media.tools.dto.resp.alist;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -29,11 +30,11 @@ public class listFileRespDTO {
     /**
      * 总数
      */
-    private long total;
+    private Long total;
     /**
      * 是否可写入
      */
-    private boolean write;
+    private Boolean write;
 
     @Getter
     @Setter
@@ -47,11 +48,13 @@ public class listFileRespDTO {
         /**
          * 哈希信息
          */
+        @JsonProperty("hash_info")
         private HashInfo hashInfo;
         /**
          * 是否是文件夹
          */
-        private boolean isDir;
+        @JsonProperty("is_dir")
+        private Boolean isDir;
         /**
          * 修改时间
          */
@@ -67,7 +70,7 @@ public class listFileRespDTO {
         /**
          * 大小
          */
-        private long size;
+        private Long size;
         /**
          * 缩略图
          */
@@ -75,7 +78,7 @@ public class listFileRespDTO {
         /**
          * 类型
          */
-        private long type;
+        private Long type;
 
         @Getter
         @Setter
