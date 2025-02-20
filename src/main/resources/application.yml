@@ -4,8 +4,8 @@ app:
   # alist配置
   alist:
     token: alist-39c5876b-956d-4f2c-8bd3-e280439eab43YcXcivJ6J3oHzgXVItnIpQAcG7goPpUIX42HP2TClK06rhbc3mAyp3l7sb8AlTkT  # alist token
-    url: http://192.168.2.2:5244  # alist地址
-    mediaUrl: http://192.168.2.2:5244/d  # alist媒体地址
+    url: http://127.0.0.1:5244  # alist地址
+    mediaUrl: http://127.0.0.1:5244/d  # alist媒体地址
     driver115Path: /115网盘  # alist115网盘路径
     # 待处理媒体路径
     mediaPath:
@@ -47,26 +47,26 @@ app:
   # tinymediamanger配置
   ttm:
     enabled: false   # 是否开启ttm刮削
-    url: http://192.168.2.2:7878/api/tvshows
+    url: http://127.0.0.1:7878/api/tvshows
     apiKey: 3684ce7c-8917-4a75-af06-6be611bafbe5
     scrapTime: 60 # 刮削时间
   # cd2配置
   cloud-drive:
     enabled: false   # 是否开启cd2刮削，不开启则默认刮削为alist挂载到本地的路径
-    url: http://192.168.2.2:19798
+    url: http://127.0.0.1:19798
     username: 1144804894@qq.com
-    password: zq19970525
+    password: 123456
 
 feign:
   okhttp:
     enabled: true
 http:
-  logLevel: body
+  logLevel: none
 
 spring:
   datasource:
 #    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://192.168.30.78:3306/media?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+#    url: jdbc:mysql://127.0.0.1:3306/media?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
     url: jdbc:h2:file:./db/media;AUTO_RECONNECT=TRUE
     username: sa
     password:
@@ -80,4 +80,4 @@ spring:
       enabled: true
       settings:
         web-allow-others: true
-        web-admin-password: zq19970525
+        web-admin-password: 123456
