@@ -39,7 +39,7 @@ app:
   downloadMediaFile: true  # 是否下载媒体文件
   # alist配置
   alist:
-    token: alist-39c5876b-956d-4f2c-8bd3-e280439eab43YcXcivJ6J3oHzgXVItnIpQAcG7goPpUIX42HP2TClK06rhbc3mAyp3l7sb8AlTkT  # alist token
+    token: alist-39c5876b-956d-4f2c-8bd3-e280439e313214141414hbc3mAyp3l7sb8AlTkT  # alist token
     url: http://127.0.0.1:5244  # alist地址
     mediaUrl: http://127.0.0.1:5244/d  # alist媒体地址
     driver115Path: /115网盘  # alist115网盘路径
@@ -63,7 +63,7 @@ app:
   client115:
     enabled: true   # 是否开启115网盘生活监听
     intervalMinutes: 30  # 监听间隔
-    cookie: UID=341890318_R2_1731548315;CID=0af3d63bf63a259a30c3a33207f3b292;SEID=7456fe87bf1a5a11716b3edd604b23579e2bb912f61295c7bf708a5551809c13ac40d5f3b7f2360682f6ab8e5b965231ce109f2bc5634555527751c7
+    cookie: UID=341890318_R2_1731548315;CID=0af3d63b41417f3b292;SEID=7456fe87bf1a4214140d5f3b7f2360682f6ab8e5b965231ce10942141751c7
     # 忽略文件夹
     ignoreFolders:
       - /未刮削
