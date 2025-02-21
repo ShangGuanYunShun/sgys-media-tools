@@ -4,7 +4,7 @@
 媒体库工具：strm工具、网盘、alist等等
 1. 利用alist，可以全量生成strm文件，并下载图片及nfo等相关文件。
 2. 通过监听115生活事件，实现增量数据入库，自动生成strm文件，下载图片及nfo文件。
-3. 结合**[quark-auto-save](https://github.com/Cp0204/quark-auto-save)**项目，可自动化完成追剧、刮削信息、入库操作（必须指定其他网盘）。
+3. 结合[quark-auto-save](https://github.com/Cp0204/quark-auto-save)项目，可自动化完成追剧、刮削信息、入库操作（必须指定其他网盘）。
 
 #### 安装教程
 ##### 通过Docker安装

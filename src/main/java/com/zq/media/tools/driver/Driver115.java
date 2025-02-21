@@ -516,7 +516,7 @@ public class Driver115 {
                     TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
                     Path fullPath = Paths.get(configProperties.getServer().getDriver115Path(), path.toString());
                     StrmUtil.downloadFile(fileUrl, cookie, fullPath);
-                    log.info("下载文件：{}", configProperties.getServer().getDriver115Path() + "/" + path);
+                    log.info("下载文件：{}", fullPath);
                     nonStrmFileCount++;
                     return path.toString();
                 }
