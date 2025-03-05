@@ -37,7 +37,7 @@ public class StrmUtil {
     public static String generateStrmFiles(Path filePath) {
         Path strmPath = Paths.get(configProperties.getServer().getBasePath(), filePath.getParent().toString(), FileUtil.mainName(filePath.getFileName().toString()) + ".strm");
         String videoRelativeUrl = configProperties.getAlist().getMediaUrl() + filePath.toString().replace("\\", "/").replace("//", "/");
-        FileUtil.writeUtf8String(URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8), strmPath.toString());
+        FileUtil.writeUtf8String(configProperties.getEncodeStrmPath() ? URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8) : videoRelativeUrl, strmPath.toString());
         return strmPath.toString();
     }
 
@@ -49,8 +49,7 @@ public class StrmUtil {
      */
     public static void writeStrmFiles(Path strmFilePath, String path) {
         String videoRelativeUrl = configProperties.getAlist().getMediaUrl() + path.replace("\\", "/").replace("//", "/");
-        String encodedUrl = URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8);
-        FileUtil.writeUtf8String(encodedUrl, strmFilePath.toString());
+        FileUtil.writeUtf8String(configProperties.getEncodeStrmPath() ? URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8) : videoRelativeUrl, strmFilePath.toString());
     }
 
     /**
@@ -89,7 +88,7 @@ public class StrmUtil {
     public static void downloadFile(String url, String cookie, Path savePath) {
         HttpRequest request = HttpRequest.get(url)
                 .header("Cookie", cookie)
-                .header("User-Agent", configProperties.getClient115().getUserAgent())
+                .header("User-Agent", configProperties.getDriver115().getUserAgent())
                 .timeout(10000);
         HttpResponse response = request.execute();
 

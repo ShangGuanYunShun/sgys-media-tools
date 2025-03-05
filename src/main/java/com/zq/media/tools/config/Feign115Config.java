@@ -13,7 +13,7 @@ public class Feign115Config {
 
     @Bean
     public RequestInterceptor requestInterceptor(ConfigProperties configProperties) {
-        return requestTemplate -> requestTemplate.header("Cookie", configProperties.getClient115().getCookie());
+        return requestTemplate -> requestTemplate.header("Cookie", configProperties.getDriver115().getCookie());
     }
 
 }

@@ -1,5 +1,6 @@
 package com.zq.media.tools.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zq.media.tools.entity.Media115;
@@ -45,6 +46,7 @@ public class Media115ServiceImpl extends ServiceImpl<Media115Mapper, Media115> i
     public List<Media115> queryDescendantsByFileId(String fileId) {
         List<Media115> descendants = new ArrayList<>();
         findDescendants(fileId, descendants);
+        descendants.add(getByFileId(fileId));
         return descendants;
     }
 
@@ -52,14 +54,14 @@ public class Media115ServiceImpl extends ServiceImpl<Media115Mapper, Media115> i
      * 查询列表通过SHA1
      *
      * @param sha1 SHA1
-     * @param name 名字
+     * @param path 路径
      * @return {@link Media115 }
      */
     @Override
-    public Media115 getBySha1(String sha1, String name) {
+    public Media115 getBySha1AndPath(String sha1, String path) {
         return media115Mapper.selectOne(Wrappers.lambdaQuery(Media115.class)
-                .eq(Media115::getSha1, sha1)
-                .eq(Media115::getFileName, name));
+                .eq(StrUtil.isNotBlank(sha1), Media115::getSha1, sha1)
+                .eq(Media115::getPath, path));
     }
 
     private void findDescendants(String fileId, List<Media115> descendants) {

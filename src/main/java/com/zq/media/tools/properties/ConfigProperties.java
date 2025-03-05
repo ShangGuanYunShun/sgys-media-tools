@@ -34,6 +34,11 @@ public class ConfigProperties {
     private Boolean downloadMediaFile = true;
 
     /**
+     * 对 strm 路径进行编码
+     */
+    private Boolean encodeStrmPath = true;
+
+    /**
      * alist 配置
      */
     private Alist alist;
@@ -51,7 +56,12 @@ public class ConfigProperties {
     /**
      * 115网盘配置
      */
-    private Client115 client115;
+    private Driver115 driver115;
+
+    /**
+     * 夸克网盘配置
+     */
+    private DriverQuark driverQuark;
 
     /**
      * tinyMediaManager 配置
@@ -121,7 +131,7 @@ public class ConfigProperties {
     @Getter
     @Setter
     @ToString
-    public static class Client115 {
+    public static class Driver115 {
 
         private Boolean enabled;
 
@@ -141,6 +151,17 @@ public class ConfigProperties {
          */
         private List<String> ignoreFolders = new ArrayList<>();
 
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class DriverQuark {
+
+        /**
+         * 处理文件夹
+         */
+        private List<String> handleFolders = new ArrayList<>();
     }
 
     @Getter

@@ -60,7 +60,7 @@ app:
     basePath: /mnt/strm   # 媒体文件本地保存路径
     driver115Path: /mnt/strm/115网盘  # 115网盘本地保存路径
   # 115网盘配置
-  client115:
+  driver115:
     enabled: true   # 是否开启115网盘生活监听
     intervalMinutes: 30  # 监听间隔
     cookie: UID=341890318_R2_1731548315;CID=0af3d63b41417f3b292;SEID=7456fe87bf1a4214140d5f3b7f2360682f6ab8e5b965231ce10942141751c7

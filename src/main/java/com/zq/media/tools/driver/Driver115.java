@@ -5,6 +5,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.zq.media.tools.dto.PendingProcessFileDTO;
+import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
 import com.zq.media.tools.dto.resp.driver115.FileListRespDTO;
 import com.zq.media.tools.dto.resp.driver115.GetDownloadUrlRespDTO;
 import com.zq.media.tools.dto.resp.driver115.GetPathRespDTO;
@@ -12,6 +13,7 @@ import com.zq.media.tools.dto.resp.driver115.LifeListRespDTO;
 import com.zq.media.tools.entity.Media115;
 import com.zq.media.tools.enums.BehaviorType;
 import com.zq.media.tools.enums.FileCategory;
+import com.zq.media.tools.feign.AlistClient;
 import com.zq.media.tools.feign.Driver115Client;
 import com.zq.media.tools.feign.Life115Client;
 import com.zq.media.tools.properties.ConfigProperties;
@@ -27,7 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -62,6 +63,7 @@ public class Driver115 {
     private final Life115Client life115Client;
     private final RestTemplate restTemplate;
     private final IMedia115Service media115Service;
+    private final AlistClient alistClient;
 
     private final List<BehaviorType> unHandleBehaviorTypes = Arrays.asList(BehaviorType.BROWSE_AUDIO, BehaviorType.BROWSE_IMAGE,
             BehaviorType.BROWSE_VIDEO, BehaviorType.BROWSE_DOCUMENT, BehaviorType.STAR_FILE, BehaviorType.ACCOUNT_SECURITY);
@@ -102,7 +104,7 @@ public class Driver115 {
         if (endTime == null) {
             endTime = LocalDateTime.now().toEpochSecond(ZoneOffset.ofHours(8));
         }
-        LifeListRespDTO lifeListResponse = life115Client.queryLifeList(startTime, endTime, configProperties.getClient115().getLimit(), null);
+        LifeListRespDTO lifeListResponse = life115Client.queryLifeList(startTime, endTime, configProperties.getDriver115().getLimit(), null);
         if (lifeListResponse == null || lifeListResponse.getData() == null || lifeListResponse.getData().getList().isEmpty()) {
             return Collections.emptyList();
         }
@@ -112,9 +114,7 @@ public class Driver115 {
         // 分页获取所有数据
         while (StrUtil.isNotBlank(lifeListResponse.getData().getLastData())) {
             TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
-            lifeListResponse = life115Client.queryLifeList(startTime, endTime, configProperties.getClient115().getLimit(),
-                    lifeListResponse.getData().getLastData());
-
+            lifeListResponse = life115Client.queryLifeList(startTime, endTime, configProperties.getDriver115().getLimit(), lifeListResponse.getData().getLastData());
             if (lifeListResponse == null || lifeListResponse.getData() == null ||
                     lifeListResponse.getData().getList().isEmpty()) {
                 break;
@@ -154,18 +154,16 @@ public class Driver115 {
             TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
             String path = buildFullPath(item);
 
-            // 检查是否在忽略列表中
-            if (shouldIgnore(path)) {
-                log.debug("忽略文件（夹）：{}", path);
-                continue;
-            }
-
+            PendingProcessFileDTO pendingFile;
             // 根据文件类型分别处理目录和文件
             if (item.getFileCategory() == FileCategory.CATALOG) {
-                processCatalog(item, path, behavior.getBehaviorType(), pendingProcessFiles);
+                pendingFile = createPendingFileFromItem(item, path, behavior.getBehaviorType(), true);
+                log.info("操作类型：{}，文件夹路径： {}", behavior.getBehaviorType(), path);
             } else {
-                processPendingFile(item, path, behavior.getBehaviorType(), pendingProcessFiles);
+                pendingFile = createPendingFileFromItem(item, path, behavior.getBehaviorType(), false);
+                log.info("操作类型：{}，文件路径： {}", behavior.getBehaviorType(), path);
             }
+            pendingProcessFiles.add(pendingFile);
         }
         return pendingProcessFiles;
     }
@@ -260,7 +258,7 @@ public class Driver115 {
     private void fetchAllFilesInDirectory(String cid, String parentPath, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
         // 获取目录下的文件列表
         TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
-        FileListRespDTO fileListResponse = driver115Client.listFiles(cid, configProperties.getClient115().getLimit());
+        FileListRespDTO fileListResponse = driver115Client.listFiles(cid, configProperties.getDriver115().getLimit());
 
         for (FileListRespDTO.FileDataDTO file : fileListResponse.getData()) {
             String filePath = parentPath + "/" + file.getFileName();
@@ -269,14 +267,12 @@ public class Driver115 {
 
             // 递归处理子目录
             if (isDic) {
-                log.info("操作类型：{}，文件路径： {}", behaviorType, filePath);
                 fetchAllFilesInDirectory(file.getCatalogId(), filePath, behaviorType, pendingProcessFiles);
             }
 
             // 创建待处理文件对象并添加到列表
             PendingProcessFileDTO pendingFile = buildPendingFile(file, filePath, behaviorType, isDic);
             pendingProcessFiles.add(pendingFile);
-            log.info("操作类型：{}，文件路径： {}", behaviorType, filePath);
         }
     }
 
@@ -284,7 +280,7 @@ public class Driver115 {
      * 检查文件路径是否需要忽略
      */
     private boolean shouldIgnore(String path) {
-        return configProperties.getClient115().getIgnoreFolders().stream()
+        return configProperties.getDriver115().getIgnoreFolders().stream()
                 .anyMatch(path::startsWith);
     }
 
@@ -293,8 +289,8 @@ public class Driver115 {
      */
     private HttpHeaders buildHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Cookie", configProperties.getClient115().getCookie());
-        headers.set("User-Agent", configProperties.getClient115().getUserAgent());
+        headers.set("Cookie", configProperties.getDriver115().getCookie());
+        headers.set("User-Agent", configProperties.getDriver115().getUserAgent());
         return headers;
     }
 
@@ -322,7 +318,7 @@ public class Driver115 {
         return dto.setFileId(item.getFileId())
                 .setFileName(item.getFileName())
                 .setPickCode(item.getPickCode())
-                .setSha1(item.getSha1())
+                .setSha1(StrUtil.swapCase(item.getSha1()))
                 .setFilePath(path)
                 .setParentId(item.getParentId())
                 .setExt(item.getExt())
@@ -335,12 +331,12 @@ public class Driver115 {
      */
     private PendingProcessFileDTO buildPendingFile(FileListRespDTO.FileDataDTO file, String filePath, BehaviorType behaviorType, boolean isDic) {
         PendingProcessFileDTO dto = new PendingProcessFileDTO();
-        return dto.setFileId(file.getFileId())
+        return dto.setFileId(isDic ? file.getCatalogId() : file.getFileId())
                 .setFileName(file.getFileName())
                 .setPickCode(file.getPickCode())
                 .setSha1(file.getSha1())
                 .setFilePath(filePath)
-                .setParentId(file.getCatalogId())
+                .setParentId(isDic ? file.getParentId() : file.getCatalogId())
                 .setExt(file.getExt())
                 .setIsDic(isDic)
                 .setBehaviorType(behaviorType);
@@ -353,6 +349,9 @@ public class Driver115 {
     private void processPendingFiles(List<PendingProcessFileDTO> pendingProcessFiles) {
         for (PendingProcessFileDTO pendingFile : pendingProcessFiles) {
             try {
+                // 刷新目录
+                String path = configProperties.getAlist().getDriver115Path() + FileUtil.getParent(pendingFile.getFilePath(), 1);
+                alistClient.listFile(new ListFileReqDTO(path, true));
                 processPendingFile(pendingFile);
             } catch (Exception e) {
                 log.warn("处理文件时发生异常：{}", pendingFile, e);
@@ -373,11 +372,13 @@ public class Driver115 {
             case RECEIVE_FILES:
             case NEW_FOLDER:
             case COPY_FOLDER:
-            case MOVE_FILE:
-            case MOVE_IMAGE_FILE:
             case UPLOAD_FILE:
             case UPLOAD_IMAGE_FILE:
                 handleFileCreation(fullPath, path, pendingFile);
+                break;
+            case MOVE_FILE:
+            case MOVE_IMAGE_FILE:
+                handleFileMove(fullPath, path, pendingFile);
                 break;
             case DELETE_FILE:
                 handleFileDeletion(pendingFile);
@@ -418,25 +419,63 @@ public class Driver115 {
      * @param pendingFile 待处理文件信息
      */
     private void handleFileCreation(Path fullPath, Path path, PendingProcessFileDTO pendingFile) {
-        if (Files.exists(fullPath)) {
+        // 检查是否在忽略列表中
+        if (shouldIgnore(path.toString())) {
+            log.debug("忽略{}：{}", pendingFile.getIsDic() ? "文件夹" : "文件", path);
             return;
         }
-
-        String filePath = pendingFile.getFilePath();
-        if (!pendingFile.getIsDic()) {
-            // 下载文件或创建strm文件
-            filePath = downloadFileOrCreateStrm(path, pendingFile.getPickCode());
+        Media115 media115 = media115Service.getByFileId(pendingFile.getFileId());
+        if (media115 == null) {
+            if (!pendingFile.getIsDic()) {
+                // 下载文件或创建strm文件
+                downloadFileOrCreateStrm(path, pendingFile.getPickCode());
+            }
+            // 保存文件信息到数据库
+            media115 = new Media115()
+                    .setFileId(pendingFile.getFileId())
+                    .setParentId(pendingFile.getParentId())
+                    .setPath(fullPath.toString())
+                    .setFileName(pendingFile.getFileName())
+                    .setPickCode(pendingFile.getPickCode())
+                    .setSha1(StrUtil.swapCase(pendingFile.getSha1()))
+                    .setExt(pendingFile.getExt());
+            media115Service.save(media115);
         }
-        // 保存文件信息到数据库
-        Media115 media115 = new Media115()
-                .setFileId(pendingFile.getFileId())
-                .setParentId(pendingFile.getParentId())
-                .setPath(filePath)
-                .setFileName(pendingFile.getFileName())
-                .setPickCode(pendingFile.getPickCode())
-                .setSha1(StrUtil.isNotBlank(pendingFile.getSha1()) ? pendingFile.getSha1() : null)
-                .setExt(pendingFile.getExt());
-        media115Service.save(media115);
+    }
+
+    /**
+     * 处理文件移动
+     * 移动文件并保存相关信息到数据库或者删除相关信息及数据库记录
+     *
+     * @param fullPath    完整文件路径
+     * @param path        相对文件路径
+     * @param pendingFile 待处理文件信息
+     */
+    private void handleFileMove(Path fullPath, Path path, PendingProcessFileDTO pendingFile) {
+        Media115 media115 = media115Service.getByFileId(pendingFile.getFileId());
+        // 说明是未刮削目录到刮削目录，则执行创建操作
+        if (media115 == null) {
+            // 检查是否在忽略列表中
+            if (shouldIgnore(path.toString())) {
+                log.debug("忽略{}：{}", pendingFile.getIsDic() ? "文件夹" : "文件", path);
+                return;
+            }
+            handleFileCreation(fullPath, path, pendingFile);
+            if (pendingFile.getIsDic()) {
+                List<PendingProcessFileDTO> pendingProcessFiles = new ArrayList<>();
+                // 递归处理目录内容
+                fetchAllFilesInDirectory(pendingFile.getFileId(), pendingFile.getFilePath(), pendingFile.getBehaviorType(), pendingProcessFiles);
+                pendingProcessFiles.forEach(file -> {
+                    Path filePath = Paths.get(file.getFilePath());
+                    handleFileCreation(getFullPath(filePath), filePath, file);
+                });
+            }
+        } else {
+            // 删除旧文件
+            handleFileDeletion(pendingFile);
+            // 重新创建
+            handleFileMove(fullPath, path, pendingFile);
+        }
     }
 
     /**
@@ -454,7 +493,7 @@ public class Driver115 {
                 return;
             }
         } else {
-            Media115 media115 = media115Service.getBySha1(pendingFile.getSha1().toUpperCase(), pendingFile.getFileName());
+            Media115 media115 = media115Service.getByFileId(pendingFile.getFileId());
             if (media115 == null) {
                 return;
             }
@@ -462,7 +501,7 @@ public class Driver115 {
         }
 
         for (Media115 deleteFile : deleteFiles) {
-            FileUtil.del(Paths.get(configProperties.getServer().getDriver115Path() + deleteFile.getPath()));
+            FileUtil.del(deleteFile.getPath());
             media115Service.removeById(deleteFile.getId());
             log.info("删除文件：{}", deleteFile.getPath());
             deleteFileCount++;
@@ -476,6 +515,11 @@ public class Driver115 {
      * @param pendingFile 待处理文件信息
      */
     private void handleFolderRename(PendingProcessFileDTO pendingFile) {
+        // 检查是否在忽略列表中
+        if (shouldIgnore(pendingFile.getFilePath())) {
+            log.debug("忽略文件夹：{}", pendingFile.getFilePath());
+            return;
+        }
         // 查询文件夹下的所有视频文件
         List<Media115> renameFiles = media115Service.queryDescendantsByFileId(pendingFile.getFileId());
         for (Media115 renameFile : renameFiles) {
@@ -497,15 +541,13 @@ public class Driver115 {
      *
      * @param path     文件路径
      * @param pickCode 文件提取码
-     * @return 处理后的文件路径
      */
     @SneakyThrows
-    private String downloadFileOrCreateStrm(Path path, String pickCode) {
+    private void downloadFileOrCreateStrm(Path path, String pickCode) {
         if (StrmUtil.isVideoFile(path)) {
             String strmPath = StrmUtil.generateStrmFiles(Paths.get(configProperties.getAlist().getDriver115Path() + path));
             log.info("生成strm文件: {}", strmPath);
             strmFileCount++;
-            return strmPath;
         } else {
             if (configProperties.getDownloadMediaFile()) {
                 Map<String, String> map = getFileUrlAndCookies(pickCode);
@@ -518,11 +560,9 @@ public class Driver115 {
                     StrmUtil.downloadFile(fileUrl, cookie, fullPath);
                     log.info("下载文件：{}", fullPath);
                     nonStrmFileCount++;
-                    return path.toString();
                 }
             }
         }
-        return null;
     }
 
     /**

@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "app.client115", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "app.driver115", name = "enabled", havingValue = "true")
 public class Driver115LifeMonitor {
 
     private final Driver115 driver115;
@@ -31,10 +31,10 @@ public class Driver115LifeMonitor {
      * 监控115生活事件
      * 定时任务，监控115网盘的文件变化并同步到本地
      */
-    @Scheduled(cron = "0 */${app.client115.intervalMinutes} * * * ?")
+    @Scheduled(cron = "0 */${app.driver115.intervalMinutes} * * * ?")
     public void monitorLifeEvents() {
         try {
-            driver115.handleBehavior(LocalDateTime.now().minusMinutes(configProperties.getClient115().getIntervalMinutes()), LocalDateTime.now());
+            driver115.handleBehavior(LocalDateTime.now().minusMinutes(configProperties.getDriver115().getIntervalMinutes()), LocalDateTime.now());
         } catch (Exception e) {
             log.error("监控生活事件时发生错误: ", e);
         }

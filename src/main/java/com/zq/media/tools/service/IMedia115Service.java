@@ -30,11 +30,11 @@ public interface IMedia115Service extends IService<Media115> {
     List<Media115> queryDescendantsByFileId(String fileId);
 
     /**
-     * 查询列表通过SHA1
+     * 查询列表通过SHA1和路径
      *
      * @param sha1 SHA1
-     * @param name 名字
+     * @param path 路径
      * @return {@link Media115 }
      */
-    Media115 getBySha1(String sha1, String name);
+    Media115 getBySha1AndPath(String sha1, String path);
 }

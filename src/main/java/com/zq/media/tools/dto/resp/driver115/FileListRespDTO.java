@@ -44,10 +44,16 @@ public class FileListRespDTO {
         private String fileId;
 
         /**
-         * 目录 ID
+         * 目父录 ID，本身为目录，则为目录id
          */
         @JsonProperty("cid")
         private String catalogId;
+
+        /**
+         * 父id，只针对于目录
+         */
+        @JsonProperty("pid")
+        private String parentId;
 
         /**
          * 文件名称

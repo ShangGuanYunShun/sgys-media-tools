@@ -3,6 +3,7 @@ package com.zq.media.tools.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.zq.common.util.ThreadUtil;
 import com.zq.media.tools.dto.HandleFileDTO;
+import com.zq.media.tools.properties.ConfigProperties;
 import com.zq.media.tools.service.IAlistService;
 import com.zq.media.tools.service.IReceiveNotificationService;
 import com.zq.media.tools.util.StrmUtil;
@@ -28,6 +29,7 @@ import static com.zq.common.util.CollectionUtil.anyMatch;
 public class ReceiveNotificationServiceImpl implements IReceiveNotificationService {
 
     private final IAlistService alistService;
+    private final ConfigProperties configProperties;
 
     @Override
     public void receiveQuarkAutoSave(String content) {
@@ -44,8 +46,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
             for (String str : split) {
                 str = str.trim(); // 去除前后空格
                 System.out.println(str);
-
-                if (str.contains("/接收连载动漫") || str.contains("/接收连载电视")) {
+                if (configProperties.getDriverQuark().getHandleFolders().stream().anyMatch(str::contains) ) {
                     // 设置文件夹路径
                     handleFileDTO.setFolderPath("/夸克网盘" + str);
                     isFolderPathSet = true;

@@ -13,7 +13,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
  * @date 2025-1-2 15:19
  */
 @Configuration
-@ConditionalOnProperty(prefix = "app.client115", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "app.driver115", name = "enabled", havingValue = "true")
 public class StrmWebMvcConfig {
 
     @Bean
