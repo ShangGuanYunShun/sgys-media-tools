@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 115媒体库service实现
@@ -46,7 +47,10 @@ public class Media115ServiceImpl extends ServiceImpl<Media115Mapper, Media115> i
     public List<Media115> queryDescendantsByFileId(String fileId) {
         List<Media115> descendants = new ArrayList<>();
         findDescendants(fileId, descendants);
-        descendants.add(getByFileId(fileId));
+        Media115 media115 = getByFileId(fileId);
+        if (media115 != null) {
+            descendants.add(media115);
+        }
         return descendants;
     }
 
