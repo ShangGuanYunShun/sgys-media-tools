@@ -76,8 +76,11 @@ public class AlistServiceImpl implements IAlistService {
         Set<String> newFiles = new HashSet<>();
         List<String> handleFiles = filterDuplicateEpisodes(handleFile.getFiles());
         for (String file : handleFiles) {
-            boolean exists = anyMatch(existingEpisodes,
-                    existingFile -> !existingFile.equals(file) && StrmUtil.areEpisodesEqual(existingFile, file));
+            boolean exists = false;
+            if (handleFile.getIsSingleTask()) {
+                exists = anyMatch(existingEpisodes,
+                        existingFile -> !existingFile.equals(file) && StrmUtil.areEpisodesEqual(existingFile, file));
+            }
             if (exists) {
                 log.info("剧集已存在: {}\n{}", handleFile.getFolderPath(), file);
             } else {

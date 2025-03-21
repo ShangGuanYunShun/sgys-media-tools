@@ -54,8 +54,16 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                     // 处理结束，保存当前 DTO
                     if (!handleFileDTO.getFiles().isEmpty() && handleFileDTO.getFolderPath() != null) {
                         // 判断当前文件夹是否已经在list中存在
-                        HandleFileDTO finalHandleFileDTO = handleFileDTO;
-                        if (!anyMatch(list, dto -> dto.getFolderPath().equals(finalHandleFileDTO.getFolderPath()))) {
+//                        HandleFileDTO finalHandleFileDTO = handleFileDTO;
+                        boolean isExist = false;
+                        for (HandleFileDTO fileDTO : list) {
+                            if (fileDTO.getFolderPath().equals(handleFileDTO.getFolderPath())) {
+//                                fileDTO.getFiles().addAll(handleFileDTO.getFiles());
+                                fileDTO.setIsSingleTask(false);
+                                isExist = true;
+                            }
+                        }
+                        if (!isExist) {
                             list.add(handleFileDTO);
                         }
                     }
@@ -75,13 +83,6 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                 list.add(handleFileDTO);
             }
 
-            // 延时处理
-            try {
-                TimeUnit.MINUTES.sleep(1);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // 恢复线程中断状态
-            }
-
             // 调用服务方法处理
             list.forEach(alistService::copyFileQuarkTo115);
         });
@@ -90,6 +91,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
     private HandleFileDTO createHandleFileDTO() {
         HandleFileDTO dto = new HandleFileDTO();
         dto.setFiles(new HashSet<>());
+        dto.setIsSingleTask(true);
         return dto;
     }
 }

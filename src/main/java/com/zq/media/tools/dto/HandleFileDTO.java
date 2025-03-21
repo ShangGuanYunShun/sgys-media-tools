@@ -27,4 +27,9 @@ public class HandleFileDTO {
      * 文件
      */
     private Set<String> files;
+
+    /**
+     * 是否是单个任务
+     */
+    private Boolean isSingleTask;
 }
