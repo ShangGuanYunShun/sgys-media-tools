@@ -37,6 +37,7 @@ services:
 app:
   apiRateLimit: 1  # API 速率限制
   downloadMediaFile: true  # 是否下载媒体文件
+  encodeStrmPath: true   # 是否编码strm路径
   # alist配置
   alist:
     token: alist-39c5876b-956d-4f2c-8bd3-e280439e313214141414hbc3mAyp3l7sb8AlTkT  # alist token
@@ -69,6 +70,11 @@ app:
       - /未刮削
       - /音乐
       - /云下载
+  # 夸克网盘配置
+  driverQuark:
+    handleFolders:
+      - /接收连载电视
+      - /接收连载动漫
   # tinymediamanger配置
   ttm:
     enabled: false   # 是否开启ttm刮削
