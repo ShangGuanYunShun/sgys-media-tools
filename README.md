@@ -87,6 +87,9 @@ app:
     url: http://127.0.0.1:19798
     username: 1144804894@qq.com
     password: 123456
+  # 剧集组配置，剧集名称|源剧集范围 -> 目标剧集组范围
+  episodeGroup:
+    - 凡人修仙传|S01E135-S01E152 -> S07E11-S07E28
 
 feign:
   okhttp:
