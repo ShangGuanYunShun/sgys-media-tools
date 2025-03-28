@@ -7,6 +7,7 @@ import com.zq.media.tools.dto.req.alist.DeleteFileReqDTO;
 import com.zq.media.tools.dto.req.alist.GetFileReqDTO;
 import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
 import com.zq.media.tools.dto.req.alist.MoveFileReqDTO;
+import com.zq.media.tools.dto.req.alist.RenameFileReqDTO;
 import com.zq.media.tools.dto.resp.alist.GetFileRespDTO;
 import com.zq.media.tools.dto.resp.alist.TaskRespDTO;
 import com.zq.media.tools.dto.resp.alist.listFileRespDTO;
@@ -26,6 +27,7 @@ import java.util.List;
 @FeignClient(name = "alist", url = "${app.alist.url}", configuration = FeignAlistConfig.class)
 public interface AlistClient {
 
+    // region 文件目录相关
     /**
      * 列出文件目录
      *
@@ -70,6 +72,17 @@ public interface AlistClient {
     Result deleteFile(DeleteFileReqDTO deleteFileReqDTO);
 
     /**
+     * 批量重命名文件
+     *
+     * @param renameFileReqDTO 将 file req dto 重命名为
+     * @return {@link Result }
+     */
+    @PostMapping("/api/fs/batch_rename")
+    Result renameFile(RenameFileReqDTO renameFileReqDTO);
+    // endregion
+
+    // region 任务相关
+    /**
      * 查询已完成复制任务
      *
      * @return {@link Result }<{@link List }<{@link TaskRespDTO }>>
@@ -92,5 +105,6 @@ public interface AlistClient {
      */
     @PostMapping("/api/admin/task/copy/clear_succeeded")
     Result clearCopySuccessTask();
+    // endregion
 
 }

@@ -140,7 +140,7 @@ public class StrmUtil {
      */
     public static boolean isEpisodes(String fileName) {
         // 正则表达式匹配 SxxExx 格式
-        String regex = "S(\\d{2})E(\\d+)";
+        String regex = "[Ss](\\d{2})[Ee](\\d+)";
         Pattern pattern = Pattern.compile(regex);
 
         // 提取文件名中的季数和集数
@@ -156,13 +156,45 @@ public class StrmUtil {
      * @return {@link String }
      */
     public static String getEpisodes(String fileName) {
-        String regex = "S(\\d{2})E(\\d+)";
+        String regex = "[Ss](\\d{2})[Ee](\\d+)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(fileName);
         if (matcher.find()) {
             String season = matcher.group(1);
             String episode = matcher.group(2);
             return "S" + season + "E" + episode;
+        }
+        return null;
+    }
+
+    /**
+     * 获取集数
+     *
+     * @param fileName 文件名
+     * @return {@link String }
+     */
+    public static int getEpisode(String fileName) {
+        String regex = "[Ss](\\d{2})[Ee](\\d+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(fileName);
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(2));
+        }
+        return -1;
+    }
+
+    /**
+     * 获取季数
+     *
+     * @param fileName 文件名
+     * @return {@link String }
+     */
+    public static String getSeason(String fileName) {
+        String regex = "[Ss](\\d{2})[Ee](\\d+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(fileName);
+        if (matcher.find()) {
+            return matcher.group(1);
         }
         return null;
     }

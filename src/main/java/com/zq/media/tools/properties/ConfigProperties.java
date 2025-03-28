@@ -68,6 +68,11 @@ public class ConfigProperties {
      */
     private Ttm ttm;
 
+    /**
+     * 剧集组
+     */
+    private List<String> episodeGroup = new ArrayList<>();
+
     @Getter
     @Setter
     @ToString

@@ -3,6 +3,7 @@ package com.zq.media.tools.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RuntimeUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.zq.common.domain.Result;
 import com.zq.common.util.ThreadUtil;
@@ -10,6 +11,7 @@ import com.zq.media.tools.dto.HandleFileDTO;
 import com.zq.media.tools.dto.req.alist.CopyFileReqDTO;
 import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
 import com.zq.media.tools.dto.req.alist.MoveFileReqDTO;
+import com.zq.media.tools.dto.req.alist.RenameFileReqDTO;
 import com.zq.media.tools.dto.req.ttm.TtmReqDTO;
 import com.zq.media.tools.dto.resp.alist.TaskRespDTO;
 import com.zq.media.tools.dto.resp.alist.listFileRespDTO;
@@ -22,6 +24,7 @@ import com.zq.media.tools.service.IAlistService;
 import com.zq.media.tools.util.StrmUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -34,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -95,7 +99,9 @@ public class AlistServiceImpl implements IAlistService {
 
         // 3、刷新文件列表并准备复制
         alistClient.listFile(new ListFileReqDTO(handleFile.getFolderPath(), true));
-        String scrapPath = configProperties.getAlist().getScrapPath().get(FileUtil.getName(handleFile.getFolderPath()));
+        // 剧集名
+        String seriesName = FileUtil.getName(handleFile.getFolderPath());
+        String scrapPath = configProperties.getAlist().getScrapPath().get(seriesName);
 
         // 4、判断115网盘是否已经存在此文件了
         Result<listFileRespDTO> listFileResult115 = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
@@ -111,7 +117,7 @@ public class AlistServiceImpl implements IAlistService {
         if (newFiles.isEmpty()) {
             log.info("115网盘已存在所有文件,无需复制，直接刮削: {}", scrapPath);
             // 直接触发刮削和移动文件
-            processCompletedCopy(scrapPath);
+            processCompletedCopy(seriesName, scrapPath);
             return;
         }
 
@@ -128,7 +134,7 @@ public class AlistServiceImpl implements IAlistService {
         AtomicBoolean copyTaskDone = new AtomicBoolean(false);
         int taskIndex = this.taskIndex.addAndGet(1);
         int taskId = ThreadUtil.executeCycle(
-                () -> copyFileMonitor(copyTaskDone, taskIndex, scrapPath),
+                () -> copyFileMonitor(copyTaskDone, taskIndex, seriesName, scrapPath),
                 5,
                 ChronoUnit.MINUTES
         );
@@ -198,9 +204,10 @@ public class AlistServiceImpl implements IAlistService {
      *
      * @param copyTaskDone 复制任务完成标志
      * @param index        任务索引
+     * @param seriesName   剧集名
      * @param scrapPath    刮削路径
      */
-    private void copyFileMonitor(AtomicBoolean copyTaskDone, int index, String scrapPath) {
+    private void copyFileMonitor(AtomicBoolean copyTaskDone, int index, String seriesName, String scrapPath) {
         // 获取复制任务列表
         Result<List<TaskRespDTO>> copyUndoneTaskListResult = alistClient.listCopyUndoneTask();
         log.debug("复制文件监视器：{}", copyUndoneTaskListResult.getCheckedData());
@@ -215,7 +222,7 @@ public class AlistServiceImpl implements IAlistService {
         }
 
         // 异步处理后续任务
-        ThreadUtil.execute(() -> processCompletedCopy(scrapPath));
+        ThreadUtil.execute(() -> processCompletedCopy(seriesName, scrapPath));
 
         // 停止监听任务
         log.info("复制文件已完成，停止监听任务：{}-{}", taskIds.get(index), scrapPath);
@@ -226,9 +233,22 @@ public class AlistServiceImpl implements IAlistService {
      * 处理复制完成后的任务
      * 包括刷新目录、刮削文件和移动文件等操作
      *
-     * @param scrapPath 刮削路径
+     * @param seriesName 剧集名
+     * @param scrapPath  刮削路径
      */
-    private void processCompletedCopy(String scrapPath) {
+    private void processCompletedCopy(String seriesName, String scrapPath) {
+        // 剧集组重命名
+        if (!configProperties.getEpisodeGroup().isEmpty()) {
+            for (String episodeGroup : configProperties.getEpisodeGroup()) {
+                if (episodeGroup.contains(seriesName)) {
+                    // 重命名剧集组
+                    List<RenameFileReqDTO.RenameFile> renameFileList = getRenameFiles(scrapPath, episodeGroup);
+                    log.info("剧集组重命名：{}: {}", scrapPath, renameFileList);
+                    alistClient.renameFile(new RenameFileReqDTO(scrapPath, renameFileList));
+                }
+            }
+        }
+
         if (configProperties.getCloudDrive().getEnabled()) {
             // 刷新cd2目录
             refreshCD2Directory(scrapPath);
@@ -242,6 +262,60 @@ public class AlistServiceImpl implements IAlistService {
 
         // 移动文件到目标目录
         moveFilesToTarget(scrapPath);
+    }
+
+    @NotNull
+    private List<RenameFileReqDTO.RenameFile> getRenameFiles(String scrapPath, String episodeGroup) {
+        Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(scrapPath, false));
+        List<RenameFileReqDTO.RenameFile> renameFileList = new ArrayList<>();
+        listFileResult.getCheckedData().getContent().forEach(content -> {
+            if (!content.getIsDir()) {
+                String[] split = episodeGroup.split("\\|");
+                // 解析替换规则。比如：S01E135-S01E152 -> S07E11-S07E28
+                String[] parts = split[1].split(" -> ");
+                String[] oldParts = parts[0].split("-");
+                String[] newParts = parts[1].split("-");
+
+                // 旧季号，如 01
+                String oldSeason = StrmUtil.getSeason(oldParts[0]);
+                // 135
+                int oldStart = StrmUtil.getEpisode(oldParts[0]);
+                // 152
+                int oldEnd = StrmUtil.getEpisode(oldParts[1]);
+
+                // 新季号，如 07
+                String newSeason = StrmUtil.getSeason(newParts[0]);
+                // 11
+                int newStart = StrmUtil.getEpisode(newParts[0]);
+
+                // 动态构造正则匹配 SxxE135 - SxxE252
+                String regex = "S" + oldSeason + "E(" + oldStart;
+                for (int i = oldStart + 1; i <= oldEnd; i++) {
+                    regex += "|" + i;
+                }
+                regex += ")";
+                Pattern pattern = Pattern.compile(regex);
+                Matcher matcher = pattern.matcher(content.getName());
+
+                // 替换逻辑
+                StringBuffer result = new StringBuffer();
+                while (matcher.find()) {
+                    String oldEpisode = matcher.group();
+                    // 提取集数
+                    int oldEpisodeNum = StrmUtil.getEpisode(oldEpisode);
+//                    int oldEpisodeNum = Integer.parseInt(oldEpisode.substring(oldSeason.length() + 1));
+                    // 计算新集数
+                    int newEpisodeNum = newStart + (oldEpisodeNum - oldStart);
+                    String newEpisode = StrUtil.format("S{}E{}", newSeason, newEpisodeNum);
+
+                    matcher.appendReplacement(result, newEpisode);
+                }
+                matcher.appendTail(result);
+
+                renameFileList.add(new RenameFileReqDTO.RenameFile(content.getName(), result.toString()));
+            }
+        });
+        return renameFileList;
     }
 
     /**
