@@ -24,12 +24,12 @@ public class LifeListRespDTO {
     /**
      * 请求状态
      */
-    private boolean state;
+    private Boolean state;
 
     /**
      * 响应码
      */
-    private int code;
+    private Integer code;
 
     /**
      * 响应消息
@@ -52,7 +52,7 @@ public class LifeListRespDTO {
         /**
          * 事件数量
          */
-        private int count;
+        private Integer count;
 
         /**
          * 事件行为列表
@@ -77,13 +77,13 @@ public class LifeListRespDTO {
         /**
          * 总条目数
          */
-        private int total;
+        private Integer total;
 
         /**
          * 更新时间
          */
         @JsonProperty("update_time")
-        private long updateTime;
+        private Long updateTime;
 
         /**
          * 行为类型
@@ -92,70 +92,14 @@ public class LifeListRespDTO {
         private BehaviorType behaviorType;
 
         /**
+         * 日期
+         */
+        private String date;
+
+        /**
          * 行为条目列表
          */
-        private List<ItemDTO> items;
+        private List<BehaviorDetailDTO> items;
     }
 
-    /**
-     * ItemDTO 表示行为条目中的具体文件或目录信息。
-     */
-    @Getter
-    @Setter
-    @ToString
-    public static class ItemDTO {
-
-        /**
-         * 条目 ID
-         */
-        private String id;
-
-        /**
-         * 文件或目录 ID
-         */
-        @JsonProperty("file_id")
-        private String fileId;
-
-        /**
-         * 父目录 ID
-         */
-        @JsonProperty("parent_id")
-        private String parentId;
-
-        /**
-         * 选取代码
-         */
-        @JsonProperty("pick_code")
-        private String pickCode;
-
-        /**
-         * SHA1
-         */
-        private String sha1;
-
-        /**
-         * 文件或目录名称
-         */
-        @JsonProperty("file_name")
-        private String fileName;
-
-        /**
-         * 原文件或目录名称
-         */
-        @JsonProperty("old_file_name")
-        private String oldFileName;
-
-
-        /**
-         * 类别（0 表示目录，1 表示文件）
-         */
-        @JsonProperty("file_category")
-        private FileCategory fileCategory;
-
-        /**
-         * 文件扩展名
-         */
-        @JsonProperty("ico")
-        private String ext;
-    }
 }

@@ -1,6 +1,7 @@
 package com.zq.media.tools.feign;
 
 import com.zq.media.tools.config.Feign115Config;
+import com.zq.media.tools.dto.resp.driver115.BehaviorDetailsRespDTO;
 import com.zq.media.tools.dto.resp.driver115.FileListRespDTO;
 import com.zq.media.tools.dto.resp.driver115.GetDownloadUrlRespDTO;
 import com.zq.media.tools.dto.resp.driver115.GetPathRespDTO;
@@ -45,4 +46,16 @@ public interface Driver115Client {
      */
     @GetMapping("/files/download")
     GetDownloadUrlRespDTO getDownloadUrl(@RequestParam("pickcode") String pickCode);
+
+    /**
+     * 获取行为详细信息
+     *
+     * @param offset 分页偏移量
+     * @param limit  分页大小，最大值1000
+     * @param type   类型
+     * @param date   日期
+     * @return {@link BehaviorDetailsRespDTO }
+     */
+    @GetMapping("/behavior/detail")
+    BehaviorDetailsRespDTO getBehaviorDetails(@RequestParam("offset") int offset, @RequestParam("limit") int limit, @RequestParam("type") String type, @RequestParam("date") String date);
 }

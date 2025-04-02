@@ -6,6 +6,8 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.zq.media.tools.dto.PendingProcessFileDTO;
 import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
+import com.zq.media.tools.dto.resp.driver115.BehaviorDetailDTO;
+import com.zq.media.tools.dto.resp.driver115.BehaviorDetailsRespDTO;
 import com.zq.media.tools.dto.resp.driver115.FileListRespDTO;
 import com.zq.media.tools.dto.resp.driver115.GetDownloadUrlRespDTO;
 import com.zq.media.tools.dto.resp.driver115.GetPathRespDTO;
@@ -71,6 +73,8 @@ public class Driver115 {
     // 定义正则表达式来匹配32位十六进制的cookie键值对
     private static final Pattern COOKIE_PATTERN = Pattern.compile("(acw_tc=[0-9a-f]+)|([0-9a-f]{32}=[0-9a-f]{32})");
 
+    public static final int behaviorLimit = 32;
+
     private int strmFileCount, nonStrmFileCount, deleteFileCount, renameVideoCount;
 
     /**
@@ -123,14 +127,14 @@ public class Driver115 {
         }
         // 待处理行为列表
         List<PendingProcessFileDTO> pendingProcessFiles = new ArrayList<>();
-
+        Map<String, PendingProcessFileDTO> pendingProcessFileMap = new HashMap<>();
         // 处理行为列表
         for (LifeListRespDTO.BehaviorDTO behavior : lifeList) {
             if (unHandleBehaviorTypes.contains(behavior.getBehaviorType())) {
                 continue;
             }
             try {
-                pendingProcessFiles.addAll(processBehavior(behavior));
+                pendingProcessFiles.addAll(processBehavior(startTime, endTime, pendingProcessFileMap, behavior));
             } catch (Exception e) {
                 log.warn("处理监听事件时发生异常：{}", behavior, e);
             }
@@ -141,53 +145,93 @@ public class Driver115 {
     /**
      * 处理115网盘的生活动作，包括文件的增删改等操作
      *
-     * @param behavior 行为对象，包含操作类型和文件项目列表
+     * @param startTime             开始时间
+     * @param endTime               结束时间
+     * @param pendingProcessFileMap 待处理流程文件
+     * @param behavior              行为对象，包含操作类型和文件项目列表
      * @return 待处理文件列表
      */
     @SneakyThrows
-    private List<PendingProcessFileDTO> processBehavior(LifeListRespDTO.BehaviorDTO behavior) {
+    private List<PendingProcessFileDTO> processBehavior(Long startTime, Long endTime, Map<String, PendingProcessFileDTO> pendingProcessFileMap, LifeListRespDTO.BehaviorDTO behavior) {
         List<PendingProcessFileDTO> pendingProcessFiles = new ArrayList<>();
-
-        // 遍历处理每个文件项目
-        for (LifeListRespDTO.ItemDTO item : behavior.getItems()) {
-            // 每个文件处理间隔1秒
-            TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
-            String path = buildFullPath(item);
-
-            PendingProcessFileDTO pendingFile;
-            // 根据文件类型分别处理目录和文件
-            if (item.getFileCategory() == FileCategory.CATALOG) {
-                pendingFile = createPendingFileFromItem(item, path, behavior.getBehaviorType(), true);
-                log.info("操作类型：{}，文件夹路径： {}", behavior.getBehaviorType(), path);
-            } else {
-                pendingFile = createPendingFileFromItem(item, path, behavior.getBehaviorType(), false);
-                log.info("操作类型：{}，文件路径： {}", behavior.getBehaviorType(), path);
+        // 查询更多详情
+        if (behavior.getTotal() > behavior.getItems().size()) {
+            int offset = 0;
+            while (true) {
+                TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
+                BehaviorDetailsRespDTO behaviorDetails = driver115Client.getBehaviorDetails(offset, behaviorLimit, behavior.getBehaviorType().getCode(), behavior.getDate());
+                if (behaviorDetails.getState()) {
+                    for (BehaviorDetailDTO behaviorDetailDTO : behaviorDetails.getData().getList()) {
+                        PendingProcessFileDTO pendingProcessFileDTO = pendingProcessFileMap.get(behaviorDetailDTO.getId());
+                        if ((pendingProcessFileDTO != null && pendingProcessFileDTO.getBehaviorType() == behavior.getBehaviorType())
+                                || behaviorDetailDTO.getUpdateTime() >= endTime) {
+                            continue;
+                        }
+                        if (behaviorDetailDTO.getUpdateTime() < startTime) {
+                            break;
+                        }
+                        // 构建待处理文件
+                        buildPendingProcessFile(pendingProcessFileMap, behavior, behaviorDetailDTO, pendingProcessFiles);
+                    }
+                    // 是否存在下一页
+                    if (Boolean.TRUE.equals(behaviorDetails.getData().getNextPage())) {
+                        offset += behaviorLimit;
+                    } else {
+                        break;
+                    }
+                } else {
+                    log.error("获取行为详情失败，行为类型：{}，日期：{}\n{}", behavior.getBehaviorType(), behavior.getDate(), behaviorDetails);
+                }
             }
-            pendingProcessFiles.add(pendingFile);
+        } else {
+            // 遍历处理每个文件项目
+            for (BehaviorDetailDTO behaviorDetailDTO : behavior.getItems()) {
+                // 构建待处理文件
+                buildPendingProcessFile(pendingProcessFileMap, behavior, behaviorDetailDTO, pendingProcessFiles);
+            }
         }
+
         return pendingProcessFiles;
+    }
+
+    private void buildPendingProcessFile(Map<String, PendingProcessFileDTO> pendingProcessFileMap, LifeListRespDTO.BehaviorDTO behavior, BehaviorDetailDTO behaviorDetailDTO, List<PendingProcessFileDTO> pendingProcessFiles) throws InterruptedException {
+        // 每个文件处理间隔1秒
+        TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
+        String path = buildFullPath(behaviorDetailDTO.getFileId());
+
+        PendingProcessFileDTO pendingFile;
+        // 根据文件类型分别处理目录和文件
+        if (behaviorDetailDTO.getFileCategory() == FileCategory.CATALOG) {
+            pendingFile = createPendingFileFromItem(behaviorDetailDTO, path, behavior.getBehaviorType(), true);
+            log.info("操作类型：{}，文件夹路径： {}", behavior.getBehaviorType(), path);
+        } else {
+            pendingFile = createPendingFileFromItem(behaviorDetailDTO, path, behavior.getBehaviorType(), false);
+            log.info("操作类型：{}，文件路径： {}", behavior.getBehaviorType(), path);
+        }
+        pendingProcessFiles.add(pendingFile);
+        pendingProcessFileMap.put(behaviorDetailDTO.getId(), pendingFile);
     }
 
     /**
      * 处理目录类型的文件
      */
-    private void processCatalog(LifeListRespDTO.ItemDTO item, String path, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
+    private void processCatalog(BehaviorDetailDTO behaviorDetailDTO, String path, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
         // 处理删除文件操作
         if (behaviorType == BehaviorType.DELETE_FILE) {
-            PendingProcessFileDTO pendingFile = createPendingFileFromItem(item, path, behaviorType, true);
+            PendingProcessFileDTO pendingFile = createPendingFileFromItem(behaviorDetailDTO, path, behaviorType, true);
             pendingProcessFiles.add(pendingFile);
             log.info("操作类型：{}，文件路径： {}", behaviorType, path);
         } else {
             // 递归处理目录内容
-            fetchAllFilesInDirectory(item.getFileId(), path, behaviorType, pendingProcessFiles);
+            fetchAllFilesInDirectory(behaviorDetailDTO.getFileId(), path, behaviorType, pendingProcessFiles);
         }
     }
 
     /**
      * 处理普通文件
      */
-    private void processPendingFile(LifeListRespDTO.ItemDTO item, String path, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
-        PendingProcessFileDTO pendingFile = createPendingFileFromItem(item, path, behaviorType, false);
+    private void processPendingFile(BehaviorDetailDTO behaviorDetailDTO, String path, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
+        PendingProcessFileDTO pendingFile = createPendingFileFromItem(behaviorDetailDTO, path, behaviorType, false);
         pendingProcessFiles.add(pendingFile);
         log.info("操作类型：{}，文件路径： {}", behaviorType, path);
     }
@@ -230,12 +274,12 @@ public class Driver115 {
     /**
      * 构造文件的完整路径
      *
-     * @param item 文件项目对象
+     * @param fileId 文件id
      * @return 完整的文件路径
      */
-    private String buildFullPath(LifeListRespDTO.ItemDTO item) {
+    private String buildFullPath(String fileId) {
         // 获取文件路径信息
-        GetPathRespDTO pathResponse = driver115Client.getFilePath(item.getFileId());
+        GetPathRespDTO pathResponse = driver115Client.getFilePath(fileId);
         StringJoiner fullPath = new StringJoiner("/", "/", "");
 
         // 过滤并构建完整路径
@@ -313,15 +357,15 @@ public class Driver115 {
     /**
      * 从ItemDTO创建待处理文件对象
      */
-    private PendingProcessFileDTO createPendingFileFromItem(LifeListRespDTO.ItemDTO item, String path, BehaviorType behaviorType, boolean isDic) {
+    private PendingProcessFileDTO createPendingFileFromItem(BehaviorDetailDTO behaviorDetailDTO, String path, BehaviorType behaviorType, boolean isDic) {
         PendingProcessFileDTO dto = new PendingProcessFileDTO();
-        return dto.setFileId(item.getFileId())
-                .setFileName(item.getFileName())
-                .setPickCode(item.getPickCode())
-                .setSha1(StrUtil.swapCase(item.getSha1()))
+        return dto.setFileId(behaviorDetailDTO.getFileId())
+                .setFileName(behaviorDetailDTO.getFileName())
+                .setPickCode(behaviorDetailDTO.getPickCode())
+                .setSha1(StrUtil.swapCase(behaviorDetailDTO.getSha1()))
                 .setFilePath(path)
-                .setParentId(item.getParentId())
-                .setExt(item.getExt())
+                .setParentId(behaviorDetailDTO.getParentId())
+                .setExt(behaviorDetailDTO.getExt())
                 .setBehaviorType(behaviorType)
                 .setIsDic(isDic);
     }
