@@ -50,11 +50,6 @@ public class Media115 {
     private String fileName;
 
     /**
-     * 选取代码
-     */
-    private String pickCode;
-
-    /**
      * SHA1
      */
     private String sha1;

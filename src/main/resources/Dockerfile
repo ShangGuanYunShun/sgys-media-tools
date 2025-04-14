@@ -1,5 +1,5 @@
 #基础镜像
-FROM sgys.zq.virtual.com.cn:8082/jdk8-python3.12:latest
+FROM sgys.zq.virtual.com.cn:8082/jdk17-python3.12:latest
 
 #工作目录
 WORKDIR /app

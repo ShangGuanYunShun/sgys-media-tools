@@ -37,7 +37,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -303,7 +302,6 @@ public class AlistServiceImpl implements IAlistService {
                     String oldEpisode = matcher.group();
                     // 提取集数
                     int oldEpisodeNum = StrmUtil.getEpisode(oldEpisode);
-//                    int oldEpisodeNum = Integer.parseInt(oldEpisode.substring(oldSeason.length() + 1));
                     // 计算新集数
                     int newEpisodeNum = newStart + (oldEpisodeNum - oldStart);
                     String newEpisode = StrUtil.format("S{}E{}", newSeason, newEpisodeNum);
@@ -336,7 +334,7 @@ public class AlistServiceImpl implements IAlistService {
         log.info("python执行结果：{}", execResult);
 
         try {
-            TimeUnit.SECONDS.sleep(30);
+            TimeUnit.SECONDS.sleep(10);
         } catch (InterruptedException ignored) {
         }
     }

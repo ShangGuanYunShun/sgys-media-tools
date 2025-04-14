@@ -480,7 +480,6 @@ public class Driver115 {
                     .setParentId(pendingFile.getParentId())
                     .setPath(fullPath.toString())
                     .setFileName(pendingFile.getFileName())
-                    .setPickCode(pendingFile.getPickCode())
                     .setSha1(StrUtil.swapCase(pendingFile.getSha1()))
                     .setExt(pendingFile.getExt());
             media115Service.save(media115);

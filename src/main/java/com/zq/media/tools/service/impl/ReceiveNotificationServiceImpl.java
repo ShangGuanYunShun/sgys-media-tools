@@ -14,9 +14,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static com.zq.common.util.CollectionUtil.anyMatch;
 
 /**
  * @author zhaoqiang
@@ -33,10 +30,8 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
 
     @Override
     public void receiveQuarkAutoSave(String content) {
-        log.info("收到来自夸克的自动转存通知：{}", content);
         ThreadUtil.execute(() -> {
             List<String> split = StrUtil.split(content, "\\n");
-//            Set<String> handlePath = new HashSet<>();
             List<HandleFileDTO> list = new ArrayList<>();
 
             // 初始化文件 DTO
@@ -45,7 +40,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
 
             for (String str : split) {
                 str = str.trim(); // 去除前后空格
-                System.out.println(str);
+                log.debug(str);
                 if (configProperties.getDriverQuark().getHandleFolders().stream().anyMatch(str::contains) ) {
                     // 设置文件夹路径
                     handleFileDTO.setFolderPath("/夸克网盘" + str);
@@ -54,11 +49,9 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                     // 处理结束，保存当前 DTO
                     if (!handleFileDTO.getFiles().isEmpty() && handleFileDTO.getFolderPath() != null) {
                         // 判断当前文件夹是否已经在list中存在
-//                        HandleFileDTO finalHandleFileDTO = handleFileDTO;
                         boolean isExist = false;
                         for (HandleFileDTO fileDTO : list) {
                             if (fileDTO.getFolderPath().equals(handleFileDTO.getFolderPath())) {
-//                                fileDTO.getFiles().addAll(handleFileDTO.getFiles());
                                 fileDTO.setIsSingleTask(false);
                                 isExist = true;
                             }
