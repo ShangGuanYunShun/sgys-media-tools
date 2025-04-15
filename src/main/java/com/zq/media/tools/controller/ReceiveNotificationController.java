@@ -1,6 +1,7 @@
 package com.zq.media.tools.controller;
 
 import com.zq.common.domain.Result;
+import com.zq.media.tools.params.EmbyNotifyParam;
 import com.zq.media.tools.service.IReceiveNotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +33,21 @@ public class ReceiveNotificationController {
     public Result quarkAutoSave(@RequestBody Map<String, Object> request) {
         String content = (String) request.get("body");
         receiveNotificationService.receiveQuarkAutoSave(content);
+        return Result.success();
+    }
+
+    @Operation(summary = "接收来自emby的神医通知", tags = "emby通知")
+    @PostMapping("/emby/shenyi")
+    public Result embyFromShenYi(@RequestBody EmbyNotifyParam embyNotifyParam) {
+        receiveNotificationService.receiveEmbyFromShenYi(embyNotifyParam);
+        return Result.success();
+    }
+
+    @Operation(summary = "接收来自emby的用户操作通知", tags = "emby通知")
+    @PostMapping("/emby/user")
+    public Result embyFromUser(@RequestBody EmbyNotifyParam embyNotifyParam) {
+//        String content = (String) request.get("body");
+//        receiveNotificationService.receiveQuarkAutoSave(content);
         return Result.success();
     }
 

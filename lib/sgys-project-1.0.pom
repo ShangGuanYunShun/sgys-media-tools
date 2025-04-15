@@ -1,170 +1,145 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.zq</groupId>
-    <artifactId>sgys-project</artifactId>
-    <version>1.0</version>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>sgys-common</module>
-        <module>sgys-core-module</module>
-        <module>sgys-core-biz-module</module>
-    </modules>
-
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <spring.boot.version>2.7.18</spring.boot.version>
-        <spring.cloud.version>2021.0.9</spring.cloud.version>
-        <spring.cloud.alibaba.version>2021.1</spring.cloud.alibaba.version>
-
-        <sgys.version>1.0</sgys.version>
-
-        <hutool.version>5.8.22</hutool.version>
-        <guava.version>33.2.1-jre</guava.version>
-
-        <captcha-plus.version>1.0.10</captcha-plus.version>
-
-        <druid.version>1.2.23</druid.version>
-        <mybatis.plus.version>3.5.7</mybatis.plus.version>
-        <dynamic.datasource.version>4.3.1</dynamic.datasource.version>
-        <mysql.version>8.0.32</mysql.version>
-
-        <knife4j.version>4.3.0</knife4j.version>
-        <swagger.core.version>2.2.9</swagger.core.version>
-        <fastexcel.version>1.0.0</fastexcel.version>
-        <transmittable.thread-local.version>2.14.5</transmittable.thread-local.version>
-    </properties>
-
-<!--    <repositories>-->
-<!--        <repository>-->
-<!--            <id>maven-nexus</id>-->
-<!--            <name>maven-nexus</name>-->
-<!--            <url>http://192.168.30.78:8081/repository/maven-public/</url>-->
-<!--            <releases>-->
-<!--                <enabled>true</enabled>-->
-<!--            </releases>-->
-<!--            <snapshots>-->
-<!--                <enabled>true</enabled>-->
-<!--            </snapshots>-->
-<!--        </repository>-->
-<!--    </repositories>-->
-
-    <distributionManagement>
-        <repository>
-            <id>sgys-releases</id>
-            <name>Releases</name>
-            <url>http://192.168.30.78:8081/repository/sgys/</url>
-        </repository>
-        <snapshotRepository>
-            <id>sgys-snapshots</id>
-            <name>Snapshot</name>
-            <url>http://192.168.30.78:8081/repository/sgys-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
-
-    <dependencyManagement>
-
-        <dependencies>
-
-            <!-- SpringCloud 微服务 -->
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring.cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <!-- SpringCloud Alibaba 微服务 -->
-            <dependency>
-                <groupId>com.alibaba.cloud</groupId>
-                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
-                <version>${spring.cloud.alibaba.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <!-- SpringBoot 依赖配置 -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring.boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-common</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <!--core包配置-->
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-core-web</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-core-mybatisplus</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-core-redis</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-core-mq</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <!--业务核心包-->
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-core-biz-security</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-core-biz-tenant</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-core-biz-rpc</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <!--api-->
-            <dependency>
-                <groupId>com.zq</groupId>
-                <artifactId>sgys-system-api</artifactId>
-                <version>${sgys.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
-                <version>${swagger.core.version}</version>
-            </dependency>
-
-        </dependencies>
-
-    </dependencyManagement>
-
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.zq</groupId>
+  <artifactId>sgys-project</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <modules>
+    <module>sgys-common</module>
+    <module>sgys-core-module</module>
+    <module>sgys-core-biz-module</module>
+  </modules>
+  <distributionManagement>
+    <repository>
+      <id>sgys-releases</id>
+      <name>Releases</name>
+      <url>http://192.168.30.78:8081/repository/sgys/</url>
+    </repository>
+    <snapshotRepository>
+      <id>sgys-snapshots</id>
+      <name>Snapshot</name>
+      <url>http://192.168.30.78:8081/repository/sgys-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+  <properties>
+    <java.version>17</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <mybatis.plus.version>3.5.7</mybatis.plus.version>
+    <spring.boot.version>2.7.18</spring.boot.version>
+    <hutool.version>5.8.22</hutool.version>
+    <fastexcel.version>1.0.0</fastexcel.version>
+    <guava.version>33.2.1-jre</guava.version>
+    <knife4j.version>4.3.0</knife4j.version>
+    <captcha-plus.version>1.0.10</captcha-plus.version>
+    <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
+    <dynamic.datasource.version>4.3.1</dynamic.datasource.version>
+    <revision>1.0</revision>
+    <spring.cloud.version>2021.0.9</spring.cloud.version>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <spring.cloud.alibaba.version>2021.1</spring.cloud.alibaba.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <druid.version>1.2.23</druid.version>
+    <transmittable.thread-local.version>2.14.5</transmittable.thread-local.version>
+    <swagger.core.version>2.2.9</swagger.core.version>
+    <mysql.version>8.0.32</mysql.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring.cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.alibaba.cloud</groupId>
+        <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+        <version>${spring.cloud.alibaba.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring.boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-common</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-core-web</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-core-mybatisplus</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-core-redis</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-core-mq</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-core-biz-security</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-core-biz-tenant</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-core-biz-rpc</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zq</groupId>
+        <artifactId>sgys-system-service-api</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>${swagger.core.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>${flatten-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>resolveCiFriendliesOnly</flattenMode>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

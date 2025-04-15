@@ -1,5 +1,7 @@
 package com.zq.media.tools.service;
 
+import com.zq.media.tools.params.EmbyNotifyParam;
+
 /**
  * 接收通知service
  *
@@ -13,4 +15,11 @@ public interface IReceiveNotificationService {
      * @param content 内容
      */
     void receiveQuarkAutoSave(String content);
+
+    /**
+     * 接收 Emby 的神医通知
+     *
+     * @param embyNotifyParam emby 通知参数
+     */
+    void receiveEmbyFromShenYi(EmbyNotifyParam embyNotifyParam);
 }

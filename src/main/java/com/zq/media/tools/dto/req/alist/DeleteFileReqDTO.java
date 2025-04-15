@@ -1,12 +1,13 @@
 package com.zq.media.tools.dto.req.alist;
 
-import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.collection.CollUtil;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * 删除文件req
@@ -19,25 +20,22 @@ import java.util.List;
 @Setter
 @ToString
 @Accessors(chain = true)
+@AllArgsConstructor
 public class DeleteFileReqDTO {
-
-    /**
-     * 文件名
-     */
-    private List<String> names;
 
     /**
      * 目录
      */
     private String dir;
 
-    public DeleteFileReqDTO(String... names) {
-        this.names = ListUtil.of(names);
-    }
+    /**
+     * 文件名
+     */
+    private Set<String> names;
 
-    public DeleteFileReqDTO(List<String> names) {
-        this.names = names;
+    public DeleteFileReqDTO(String dir, String... names) {
+        this.dir = dir;
+        this.names = CollUtil.newHashSet(names);
     }
-
 
 }
