@@ -12,8 +12,10 @@ import com.zq.media.tools.enums.EmbyEvent;
 import com.zq.media.tools.feign.AlistClient;
 import com.zq.media.tools.params.EmbyNotifyParam;
 import com.zq.media.tools.properties.ConfigProperties;
+import com.zq.media.tools.properties.TelegramBotProperties;
 import com.zq.media.tools.service.IAlistService;
 import com.zq.media.tools.service.IReceiveNotificationService;
+import com.zq.media.tools.service.ITelegramBotService;
 import com.zq.media.tools.util.StrmUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +44,8 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
     private final IAlistService alistService;
     private final ConfigProperties configProperties;
     private final AlistClient alistClient;
+    private final ITelegramBotService telegramService;
+    private final TelegramBotProperties telegramBotProperties;
 
     @Override
     public void receiveQuarkAutoSave(String content) {
@@ -103,36 +107,54 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
      */
     @Override
     public void receiveEmbyFromShenYi(EmbyNotifyParam embyNotifyParam) {
+        //TODO 暂时只做简单通知
         if (embyNotifyParam.getEvent() == EmbyEvent.DEEP_DELETE) {
-            List<String> deleteItems = extractItemPaths(embyNotifyParam.getDescription());
-            String deleteDic;
-            Set<String> deleteNames = new HashSet<>();
-            switch (embyNotifyParam.getItem().getType()) {
-                case MOVIE, SEASON:
-                    deleteDic = getPrefixByLevel(deleteItems.get(0), 2);
-                    deleteNames.add(getLastSegments(deleteItems.get(0), 2).get(0));
-                    break;
-                case SERIES:
-                    deleteDic = getPrefixByLevel(deleteItems.get(0), 3);
-                    deleteNames.add(getLastSegments(deleteItems.get(0), 3).get(0));
-                    break;
-                case EPISODE:
-                    deleteDic = getPrefixByLevel(deleteItems.get(0), 1);
-                    for (String item : deleteItems) {
-                        deleteNames.add(getLastSegments(item, 1).get(0));
-                    }
-                    Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(deleteDic, true));
-                    deleteNames.addAll(convertList(listFileResult.getCheckedData().getContent(),
-                            file -> anyMatch(deleteNames, episodeName -> StrmUtil.areEpisodesEqual(file.getName(), episodeName)),
-                            listFileRespDTO.Content::getName));
-                    break;
-                default:
-                    log.warn("不支持的媒体类型：{}", embyNotifyParam.getItem().getType());
-                    return;
-            }
-            log.info("接收到emby深度删除，调用alist删除文件，目录：{},文件：{}", deleteDic, deleteNames);
-            alistClient.deleteFile(new DeleteFileReqDTO(deleteDic, deleteNames));
+            deepDelete(embyNotifyParam);
+        } else {
+            telegramService.sendMessage(telegramBotProperties.getChatId(), embyNotifyParam.getDescription());
         }
+    }
+
+    private void deepDelete(EmbyNotifyParam embyNotifyParam) {
+        List<String> deleteItems = extractItemPaths(embyNotifyParam.getDescription());
+        String deleteDic;
+        Set<String> deleteNames = new HashSet<>();
+        String message;
+        switch (embyNotifyParam.getItem().getType()) {
+            case MOVIE:
+                deleteDic = getPrefixByLevel(deleteItems.get(0), 2);
+                deleteNames.add(getLastSegments(deleteItems.get(0), 2).get(0));
+                message = StrUtil.format("删除剧集：{}\n季：{}\n", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getItem().getName());
+                break;
+            case SEASON:
+                deleteDic = getPrefixByLevel(deleteItems.get(0), 2);
+                deleteNames.add(getLastSegments(deleteItems.get(0), 2).get(0));
+                message = StrUtil.format("删除电影：{}", embyNotifyParam.getItem().getName());
+                break;
+            case SERIES:
+                deleteDic = getPrefixByLevel(deleteItems.get(0), 3);
+                deleteNames.add(getLastSegments(deleteItems.get(0), 3).get(0));
+                message = StrUtil.format("删除剧集：{}", embyNotifyParam.getItem().getSeriesName());
+                break;
+            case EPISODE:
+                deleteDic = getPrefixByLevel(deleteItems.get(0), 1);
+                for (String item : deleteItems) {
+                    deleteNames.add(getLastSegments(item, 1).get(0));
+                }
+                Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(deleteDic, true));
+                deleteNames.addAll(convertList(listFileResult.getCheckedData().getContent(),
+                        file -> anyMatch(deleteNames, episodeName -> StrmUtil.areEpisodesEqual(file.getName(), episodeName)),
+                        listFileRespDTO.Content::getName));
+                message = StrUtil.format("删除剧集：{}\n季：{}\n集：{} - {}", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getItem().getSeasonName(),
+                        embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName());
+                break;
+            default:
+                log.warn("不支持的媒体类型：{}", embyNotifyParam.getItem().getType());
+                return;
+        }
+        log.info("接收到emby深度删除，调用alist删除文件，目录：{},文件：{}", deleteDic, deleteNames);
+        alistClient.deleteFile(new DeleteFileReqDTO(deleteDic, deleteNames));
+        telegramService.sendMessage(telegramBotProperties.getChatId(), message);
     }
 
     /**

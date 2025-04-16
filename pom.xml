@@ -15,6 +15,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <sgys.version>1.0</sgys.version>
+
+        <telegrambots.version>8.3.0</telegrambots.version>
+        <emby.version>4.9.0.47</emby.version>
     </properties>
 
     <dependencyManagement>
@@ -90,6 +93,26 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+
+        <!-- tg机器人 -->
+        <dependency>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-springboot-longpolling-starter</artifactId>
+            <version>${telegrambots.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-client</artifactId>
+            <version>${telegrambots.version}</version>
+        </dependency>
+
+        <!--emby-->
+        <dependency>
+            <groupId>media.emby</groupId>
+            <artifactId>embyclient</artifactId>
+            <version>${emby.version}</version>
         </dependency>
 
     </dependencies>

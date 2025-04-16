@@ -223,6 +223,18 @@ public class EmbyNotifyParam {
         private EmbyMediaType type;
 
         /**
+         * 剧集名称
+         */
+        @JsonProperty("SeriesName")
+        private String seriesName;
+
+        /**
+         * 季名称
+         */
+        @JsonProperty("SeasonName")
+        private String seasonName;
+
+        /**
          * 工作室
          */
         @JsonProperty("Studios")
@@ -275,6 +287,12 @@ public class EmbyNotifyParam {
          */
         @JsonProperty("BackdropImageTags")
         private String[] backdropImageTags;
+
+        /**
+         * 索引号
+         */
+        @JsonProperty("IndexNumber")
+        private Integer indexNumber;
     }
 
     /**

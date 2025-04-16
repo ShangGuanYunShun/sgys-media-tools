@@ -26,7 +26,7 @@ public enum EmbyEvent implements IEnum<String> {
     private final EmbyNotifyType notifyType;
 
     @JsonCreator
-    public static EmbyEvent getByCode(String code) {
+    public static EmbyEvent of(String code) {
         for (EmbyEvent embyEvent : values()) {
             if (embyEvent.getCode().equals(code)) {
                 return embyEvent;

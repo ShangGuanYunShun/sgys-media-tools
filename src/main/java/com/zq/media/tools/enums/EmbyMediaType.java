@@ -26,7 +26,7 @@ public enum EmbyMediaType implements IEnum<String> {
     private final String desc;
 
     @JsonCreator
-    public static EmbyMediaType getByCode(String code) {
+    public static EmbyMediaType of(String code) {
         for (EmbyMediaType value : values()) {
             if (value.getCode().equals(code)) {
                 return value;
