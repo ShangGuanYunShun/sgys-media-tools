@@ -62,5 +62,9 @@ app:
     url: http://127.0.0.1:19798
     username: 1144804894@qq.com
     password: 123456
+  emby:
+    url: http://127.0.0.1:8096
+    apiKey: 213214adsagfgasdgasga
+    user-id: 123kskjjfafasf
   episodeGroup:
     - 凡人修仙传|S01E135-S01E152 -> S07E11-S07E28

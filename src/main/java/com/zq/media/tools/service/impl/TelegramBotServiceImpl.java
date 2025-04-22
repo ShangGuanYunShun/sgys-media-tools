@@ -38,11 +38,27 @@ public class TelegramBotServiceImpl implements ITelegramBotService {
      */
     @Override
     public void sendMessage(Long chatId, String message) {
+        sendMessage(chatId, message, null);
+    }
+
+    /**
+     * 发送消息（markdown语法）
+     *
+     * @param chatId  聊天id
+     * @param message 消息
+     */
+    @Override
+    public void sendMarkdownMessage(Long chatId, String message) {
+        sendMessage(chatId, message, "Markdown");
+    }
+
+    private void sendMessage(Long chatId, String message, String parseMode) {
         log.debug("发送tg消息：{}，{}", chatId, message);
         SendMessage sendMessage = SendMessage
                 .builder()
                 .chatId(chatId)
                 .text(message)
+                .parseMode(parseMode)
                 .build();
         try {
             telegramClient.execute(sendMessage);
@@ -50,6 +66,7 @@ public class TelegramBotServiceImpl implements ITelegramBotService {
             log.error("发送tg消息失败， {}", sendMessage, e);
         }
     }
+
 
     /**
      * 发送文件
@@ -71,6 +88,22 @@ public class TelegramBotServiceImpl implements ITelegramBotService {
      */
     @Override
     public void sendFile(Long chatId, File file, String caption) {
+        sendFile(chatId, file, caption, null);
+    }
+
+    /**
+     * 发送文件（markdown语法）
+     *
+     * @param chatId  聊天id
+     * @param file    文件
+     * @param caption 标题
+     */
+    @Override
+    public void sendMarkdownFile(Long chatId, File file, String caption) {
+        sendFile(chatId, file, caption, "Markdown");
+    }
+
+    private void sendFile(Long chatId, File file, String caption, String parseMode) {
         String type = FileTypeUtil.getType(file);
         log.debug("发送tg文件消息：{}，文件类型：{}，文件名：{}，文件描述：{}", chatId, type, file.getName(), caption);
         try {
@@ -80,6 +113,7 @@ public class TelegramBotServiceImpl implements ITelegramBotService {
                         .chatId(chatId)
                         .photo(new InputFile(file))
                         .caption(caption)
+                        .parseMode(parseMode)
                         .build();
                 telegramClient.execute(sendPhoto);
             }

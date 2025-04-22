@@ -16,9 +16,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum EmbyMediaType implements IEnum<String> {
 
-    SERIES("Series", "剧集"),
+    SERIES("Series", "电视节目"),
     SEASON("Season", "季"),
-    EPISODE("Episode", "集"),
+    EPISODE("Episode", "剧集"),
     MOVIE("Movie", "电影");
 
     @JsonValue

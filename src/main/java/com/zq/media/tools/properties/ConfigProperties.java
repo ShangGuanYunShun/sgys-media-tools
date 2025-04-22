@@ -69,6 +69,11 @@ public class ConfigProperties {
     private Ttm ttm;
 
     /**
+     * emby配置
+     */
+    private Emby emby;
+
+    /**
      * 剧集组
      */
     private List<String> episodeGroup = new ArrayList<>();
@@ -199,5 +204,17 @@ public class ConfigProperties {
 
         private String password;
 
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class Emby {
+
+        private String url = "http://127.0.0.1:8096";
+
+        private String apiKey;
+
+        private String userId;
     }
 }

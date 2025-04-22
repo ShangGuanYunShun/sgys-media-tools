@@ -23,6 +23,14 @@ public interface ITelegramBotService {
     void sendMessage(Long chatId, String message);
 
     /**
+     * 发送消息（markdown语法）
+     *
+     * @param chatId  聊天id
+     * @param message 消息
+     */
+    void sendMarkdownMessage(Long chatId, String message);
+
+    /**
      * 发送文件
      *
      * @param chatId 聊天id
@@ -38,6 +46,15 @@ public interface ITelegramBotService {
      * @param caption 标题
      */
     void sendFile(Long chatId, File file, String caption);
+
+    /**
+     * 发送文件（markdown语法）
+     *
+     * @param chatId  聊天id
+     * @param file    文件
+     * @param caption 标题
+     */
+    void sendMarkdownFile(Long chatId, File file, String caption);
 
     /**
      * 发送消息

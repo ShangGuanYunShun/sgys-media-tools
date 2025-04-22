@@ -1,15 +1,18 @@
 package com.zq.media.tools.service.impl;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
+import cn.hutool.http.HttpStatus;
 import com.zq.common.domain.Result;
 import com.zq.common.util.ThreadUtil;
 import com.zq.media.tools.dto.HandleFileDTO;
 import com.zq.media.tools.dto.req.alist.DeleteFileReqDTO;
 import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
 import com.zq.media.tools.dto.resp.alist.listFileRespDTO;
-import com.zq.media.tools.enums.EmbyEvent;
+import com.zq.media.tools.enums.EmbyMediaType;
 import com.zq.media.tools.feign.AlistClient;
+import com.zq.media.tools.feign.EmbyClient;
 import com.zq.media.tools.params.EmbyNotifyParam;
 import com.zq.media.tools.properties.ConfigProperties;
 import com.zq.media.tools.properties.TelegramBotProperties;
@@ -17,16 +20,20 @@ import com.zq.media.tools.service.IAlistService;
 import com.zq.media.tools.service.IReceiveNotificationService;
 import com.zq.media.tools.service.ITelegramBotService;
 import com.zq.media.tools.util.StrmUtil;
+import feign.Response;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import static com.zq.common.util.CollectionUtil.anyMatch;
 import static com.zq.common.util.CollectionUtil.convertList;
@@ -44,6 +51,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
     private final IAlistService alistService;
     private final ConfigProperties configProperties;
     private final AlistClient alistClient;
+    private final EmbyClient embyClient;
     private final ITelegramBotService telegramService;
     private final TelegramBotProperties telegramBotProperties;
 
@@ -107,34 +115,94 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
      */
     @Override
     public void receiveEmbyFromShenYi(EmbyNotifyParam embyNotifyParam) {
-        //TODO 暂时只做简单通知
-        if (embyNotifyParam.getEvent() == EmbyEvent.DEEP_DELETE) {
-            deepDelete(embyNotifyParam);
-        } else {
-            telegramService.sendMessage(telegramBotProperties.getChatId(), embyNotifyParam.getDescription());
+        switch (embyNotifyParam.getEvent()) {
+            case DEEP_DELETE -> deepDelete(embyNotifyParam);
+            case INTRO_SKIP_UPDATE -> introSkipUpdate(embyNotifyParam);
+            case FAVORITES_UPDATE -> favoritesUpdate(embyNotifyParam);
         }
     }
 
+    /**
+     * 片头片尾跳过更新
+     *
+     * @param embyNotifyParam emby 通知参数
+     */
+    private void introSkipUpdate(EmbyNotifyParam embyNotifyParam) {
+        String introSkipUpdate = "片头";
+        if (embyNotifyParam.getDescription().contains("片尾标记")) {
+            introSkipUpdate = "片尾";
+        }
+        StringJoiner messageJoiner = new StringJoiner("\n");
+        messageJoiner.add(StrUtil.format("#{}更新 #{} #{}", introSkipUpdate, embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
+        messageJoiner.add(embyNotifyParam.getDescription());
+        telegramService.sendMessage(telegramBotProperties.getChatId(), messageJoiner.toString());
+    }
+
+    /**
+     * 最爱更新
+     *
+     * @param embyNotifyParam emby 通知参数
+     */
+    @SneakyThrows
+    private void favoritesUpdate(EmbyNotifyParam embyNotifyParam) {
+        StringJoiner messageJoiner = new StringJoiner("\n");
+        messageJoiner.add(StrUtil.format("#影视更新 #{} #{}", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
+        messageJoiner.add("\\[" + embyNotifyParam.getItem().getType().getDesc() + "]");
+        messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getSeriesName()));
+        messageJoiner.add(StrUtil.format("季：{}", embyNotifyParam.getItem().getSeasonName()));
+        messageJoiner.add(StrUtil.format("集：第{}集 {}", embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName()));
+        messageJoiner.add("上映日期：" + embyNotifyParam.getItem().getProductionYear());
+        messageJoiner.add("内容简介：" + embyNotifyParam.getItem().getOverview());
+        messageJoiner.add(StrUtil.format("相关链接： [TMDB](https://www.themoviedb.org/tv/{})", embyNotifyParam.getItem().getProviderIds().getTmdb()));
+
+        Response response = null;
+        try {
+            response = embyClient.downloadImage(embyNotifyParam.getItem().getId(), embyNotifyParam.getItem().getSeriesPrimaryImageTag());
+            // 剧集图片获取失败，尝试获取剧集主图
+            if (response.status() != HttpStatus.HTTP_OK) {
+                response = embyClient.downloadImage(embyNotifyParam.getItem().getSeriesId(), embyNotifyParam.getItem().getSeriesPrimaryImageTag());
+            }
+            File file = FileUtil.writeFromStream(response.body().asInputStream(), FileUtil.createTempFile(".jpg", true));
+            telegramService.sendMarkdownFile(telegramBotProperties.getChatId(), file, messageJoiner.toString());
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+    }
+
+    /**
+     * 深度删除
+     *
+     * @param embyNotifyParam emby 通知参数
+     */
     private void deepDelete(EmbyNotifyParam embyNotifyParam) {
         List<String> deleteItems = extractItemPaths(embyNotifyParam.getDescription());
         String deleteDic;
         Set<String> deleteNames = new HashSet<>();
-        String message;
+        StringJoiner messageJoiner = new StringJoiner("\n");
+        if (embyNotifyParam.getItem().getType() == EmbyMediaType.MOVIE) {
+            messageJoiner.add(StrUtil.format("#影视删除 #{} #{}", embyNotifyParam.getItem().getName(), embyNotifyParam.getServer().getName()));
+        } else {
+            messageJoiner.add(StrUtil.format("#影视删除 #{} #{}", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
+        }
+        messageJoiner.add("[" + embyNotifyParam.getItem().getType().getDesc() + "]");
         switch (embyNotifyParam.getItem().getType()) {
             case MOVIE:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 2);
                 deleteNames.add(getLastSegments(deleteItems.get(0), 2).get(0));
-                message = StrUtil.format("删除剧集：{}\n季：{}\n", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getItem().getName());
+                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getName()));
                 break;
             case SEASON:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 2);
                 deleteNames.add(getLastSegments(deleteItems.get(0), 2).get(0));
-                message = StrUtil.format("删除电影：{}", embyNotifyParam.getItem().getName());
+                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getSeriesName()));
+                messageJoiner.add(StrUtil.format("季：{}", embyNotifyParam.getItem().getSeasonName()));
                 break;
             case SERIES:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 3);
                 deleteNames.add(getLastSegments(deleteItems.get(0), 3).get(0));
-                message = StrUtil.format("删除剧集：{}", embyNotifyParam.getItem().getSeriesName());
+                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getName()));
                 break;
             case EPISODE:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 1);
@@ -145,8 +213,9 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                 deleteNames.addAll(convertList(listFileResult.getCheckedData().getContent(),
                         file -> anyMatch(deleteNames, episodeName -> StrmUtil.areEpisodesEqual(file.getName(), episodeName)),
                         listFileRespDTO.Content::getName));
-                message = StrUtil.format("删除剧集：{}\n季：{}\n集：{} - {}", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getItem().getSeasonName(),
-                        embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName());
+                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getSeriesName()));
+                messageJoiner.add(StrUtil.format("季：{}", embyNotifyParam.getItem().getSeasonName()));
+                messageJoiner.add(StrUtil.format("集：第{}集 {}", embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName()));
                 break;
             default:
                 log.warn("不支持的媒体类型：{}", embyNotifyParam.getItem().getType());
@@ -154,7 +223,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
         }
         log.info("接收到emby深度删除，调用alist删除文件，目录：{},文件：{}", deleteDic, deleteNames);
         alistClient.deleteFile(new DeleteFileReqDTO(deleteDic, deleteNames));
-        telegramService.sendMessage(telegramBotProperties.getChatId(), message);
+        telegramService.sendMessage(telegramBotProperties.getChatId(), messageJoiner.toString());
     }
 
     /**
@@ -190,7 +259,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
     /**
      * 获取路径中倒数指定层级数的目录/文件名
      *
-     * @param path 原始路径
+     * @param path  原始路径
      * @param level 要获取的倒数层级数（例如3表示获取倒数三层）
      * @return 倒数层级的字符串列表，若不满足层数则返回空列表
      */
