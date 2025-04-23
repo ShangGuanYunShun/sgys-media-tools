@@ -2,7 +2,6 @@ package com.zq.media.tools.config;
 
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zq.core.biz.rpc.http.HttpLoggingInterceptor;
 import com.zq.media.tools.properties.TelegramBotProperties;
 import com.zq.media.tools.service.ITelegramBotService;
 import com.zq.media.tools.telegram.bot.SgysTelegramBot;
@@ -10,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
