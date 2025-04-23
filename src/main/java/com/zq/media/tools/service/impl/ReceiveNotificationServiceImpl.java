@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 
@@ -152,7 +153,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
         messageJoiner.add(StrUtil.format("季：{}", embyNotifyParam.getItem().getSeasonName()));
         messageJoiner.add(StrUtil.format("集：第{}集 {}", embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName()));
         messageJoiner.add("上映日期：" + embyNotifyParam.getItem().getProductionYear());
-        messageJoiner.add("内容简介：" + embyNotifyParam.getItem().getOverview());
+        messageJoiner.add("内容简介：" + Optional.ofNullable(embyNotifyParam.getItem().getOverview()).orElse(""));
         messageJoiner.add(StrUtil.format("相关链接： [TMDB](https://www.themoviedb.org/tv/{})", embyNotifyParam.getItem().getProviderIds().getTmdb()));
 
         Response response = null;
