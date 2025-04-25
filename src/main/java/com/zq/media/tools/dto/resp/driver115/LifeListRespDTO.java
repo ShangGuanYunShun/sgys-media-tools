@@ -2,7 +2,6 @@ package com.zq.media.tools.dto.resp.driver115;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zq.media.tools.enums.BehaviorType;
-import com.zq.media.tools.enums.FileCategory;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -99,7 +98,7 @@ public class LifeListRespDTO {
         /**
          * 行为条目列表
          */
-        private List<BehaviorDetailDTO> items;
+        private List<BehaviorDetailRespDTO> items;
     }
 
 }

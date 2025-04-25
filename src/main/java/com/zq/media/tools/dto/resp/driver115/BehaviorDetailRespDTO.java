@@ -16,7 +16,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class BehaviorDetailDTO {
+public class BehaviorDetailRespDTO {
 
     /**
      * 条目 ID

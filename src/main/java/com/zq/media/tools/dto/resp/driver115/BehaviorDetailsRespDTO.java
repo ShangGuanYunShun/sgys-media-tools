@@ -1,7 +1,5 @@
 package com.zq.media.tools.dto.resp.driver115;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.zq.media.tools.enums.FileCategory;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -50,6 +48,6 @@ public class BehaviorDetailsRespDTO {
          */
         private Boolean nextPage;
 
-        private List<BehaviorDetailDTO> list;
+        private List<BehaviorDetailRespDTO> list;
     }
 }

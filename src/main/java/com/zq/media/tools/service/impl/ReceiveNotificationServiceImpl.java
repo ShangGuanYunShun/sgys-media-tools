@@ -10,6 +10,7 @@ import com.zq.media.tools.dto.HandleFileDTO;
 import com.zq.media.tools.dto.req.alist.DeleteFileReqDTO;
 import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
 import com.zq.media.tools.dto.resp.alist.listFileRespDTO;
+import com.zq.media.tools.dto.resp.emby.MediaPlaybackInfoRespDTO;
 import com.zq.media.tools.enums.EmbyMediaType;
 import com.zq.media.tools.feign.AlistClient;
 import com.zq.media.tools.feign.EmbyClient;
@@ -19,6 +20,7 @@ import com.zq.media.tools.properties.TelegramBotProperties;
 import com.zq.media.tools.service.IAlistService;
 import com.zq.media.tools.service.IReceiveNotificationService;
 import com.zq.media.tools.service.ITelegramBotService;
+import com.zq.media.tools.util.MediaUtil;
 import com.zq.media.tools.util.StrmUtil;
 import feign.Response;
 import lombok.RequiredArgsConstructor;
@@ -146,12 +148,26 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
      */
     @SneakyThrows
     private void favoritesUpdate(EmbyNotifyParam embyNotifyParam) {
+        MediaPlaybackInfoRespDTO mediaPlaybackInfoRespDTO = embyClient.getPlaybackInfo(embyNotifyParam.getItem().getId());
+        MediaPlaybackInfoRespDTO.MediaSource mediaSource = mediaPlaybackInfoRespDTO.getMediaSources().get(0);
+        String sizeStr = MediaUtil.formatSize(mediaSource.getSize());
+        String bitrateStr = MediaUtil.formatBitrate(mediaSource.getBitrate());
+
         StringJoiner messageJoiner = new StringJoiner("\n");
-        messageJoiner.add(StrUtil.format("#影视更新 #{} #{}", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
+        messageJoiner.add(StrUtil.format("#最爱更新 #{} #{}", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
         messageJoiner.add("\\[" + embyNotifyParam.getItem().getType().getDesc() + "]");
-        messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getSeriesName()));
-        messageJoiner.add(StrUtil.format("季：{}", embyNotifyParam.getItem().getSeasonName()));
-        messageJoiner.add(StrUtil.format("集：第{}集 {}", embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName()));
+        messageJoiner.add("片名：" + embyNotifyParam.getItem().getSeriesName());
+        messageJoiner.add("季：" + embyNotifyParam.getItem().getSeasonName());
+        if (MediaUtil.isEpisodeNumberMatched(embyNotifyParam.getItem().getName())) {
+            messageJoiner.add("集：" + embyNotifyParam.getItem().getName());
+        } else {
+            messageJoiner.add(StrUtil.format("集：第 {} 集 {}", embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName()));
+        }
+        messageJoiner.add("视频大小：" + sizeStr);
+        messageJoiner.add("视频信息：" + mediaSource.getMediaStreams().get(0).getDisplayTitle());
+        messageJoiner.add(StrUtil.format("分辨率：{}x{}", mediaSource.getMediaStreams().get(0).getWidth(), mediaSource.getMediaStreams().get(0).getHeight()));
+        messageJoiner.add(StrUtil.format("比特率：{}mbps", bitrateStr));
+        messageJoiner.add("帧率：" + mediaSource.getMediaStreams().get(0).getAverageFrameRate().intValue());
         messageJoiner.add("上映日期：" + embyNotifyParam.getItem().getProductionYear());
         messageJoiner.add("内容简介：" + Optional.ofNullable(embyNotifyParam.getItem().getOverview()).orElse(""));
         messageJoiner.add(StrUtil.format("相关链接： [TMDB](https://www.themoviedb.org/tv/{})", embyNotifyParam.getItem().getProviderIds().getTmdb()));
@@ -171,6 +187,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
             }
         }
     }
+
 
     /**
      * 深度删除
@@ -192,18 +209,18 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
             case MOVIE:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 2);
                 deleteNames.add(getLastSegments(deleteItems.get(0), 2).get(0));
-                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getName()));
+                messageJoiner.add("片名：" + embyNotifyParam.getItem().getName());
                 break;
             case SEASON:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 2);
                 deleteNames.add(getLastSegments(deleteItems.get(0), 2).get(0));
-                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getSeriesName()));
-                messageJoiner.add(StrUtil.format("季：{}", embyNotifyParam.getItem().getSeasonName()));
+                messageJoiner.add("片名：" + embyNotifyParam.getItem().getSeriesName());
+                messageJoiner.add("季：" + embyNotifyParam.getItem().getSeasonName());
                 break;
             case SERIES:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 3);
                 deleteNames.add(getLastSegments(deleteItems.get(0), 3).get(0));
-                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getName()));
+                messageJoiner.add("片名：" + embyNotifyParam.getItem().getName());
                 break;
             case EPISODE:
                 deleteDic = getPrefixByLevel(deleteItems.get(0), 1);
@@ -214,9 +231,13 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                 deleteNames.addAll(convertList(listFileResult.getCheckedData().getContent(),
                         file -> anyMatch(deleteNames, episodeName -> StrmUtil.areEpisodesEqual(file.getName(), episodeName)),
                         listFileRespDTO.Content::getName));
-                messageJoiner.add(StrUtil.format("片名：{}", embyNotifyParam.getItem().getSeriesName()));
-                messageJoiner.add(StrUtil.format("季：{}", embyNotifyParam.getItem().getSeasonName()));
-                messageJoiner.add(StrUtil.format("集：第{}集 {}", embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName()));
+                messageJoiner.add("片名：" + embyNotifyParam.getItem().getSeriesName());
+                messageJoiner.add("季：" + embyNotifyParam.getItem().getSeasonName());
+                if (MediaUtil.isEpisodeNumberMatched(embyNotifyParam.getItem().getName())) {
+                    messageJoiner.add("集：" + embyNotifyParam.getItem().getName());
+                } else {
+                    messageJoiner.add(StrUtil.format("集：第 {} 集 {}", embyNotifyParam.getItem().getIndexNumber(), embyNotifyParam.getItem().getName()));
+                }
                 break;
             default:
                 log.warn("不支持的媒体类型：{}", embyNotifyParam.getItem().getType());
