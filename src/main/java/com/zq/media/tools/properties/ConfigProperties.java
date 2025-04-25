@@ -64,6 +64,11 @@ public class ConfigProperties {
     private DriverQuark driverQuark;
 
     /**
+     * 天翼云盘配置
+     */
+    private DriverCloud189 driverCloud189;
+
+    /**
      * tinyMediaManager 配置
      */
     private Ttm ttm;
@@ -167,6 +172,17 @@ public class ConfigProperties {
     @Setter
     @ToString
     public static class DriverQuark {
+
+        /**
+         * 处理文件夹
+         */
+        private List<String> handleFolders = new ArrayList<>();
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class DriverCloud189 {
 
         /**
          * 处理文件夹

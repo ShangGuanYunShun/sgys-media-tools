@@ -1,6 +1,8 @@
 package com.zq.media.tools.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -16,6 +18,8 @@ import java.util.Set;
 @Getter
 @Setter
 @ToString
+@AllArgsConstructor
+@NoArgsConstructor
 public class HandleFileDTO {
 
     /**
@@ -32,4 +36,10 @@ public class HandleFileDTO {
      * 是否是单个任务
      */
     private Boolean isSingleTask;
+
+    public HandleFileDTO(String folderPath, Set<String> files) {
+        this.folderPath = folderPath;
+        this.files = files;
+        this.isSingleTask = true;
+    }
 }

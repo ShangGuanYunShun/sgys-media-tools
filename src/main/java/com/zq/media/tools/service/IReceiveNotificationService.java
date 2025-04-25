@@ -17,9 +17,17 @@ public interface IReceiveNotificationService {
     void receiveQuarkAutoSave(String content);
 
     /**
+     * 接收天翼云盘自动保存
+     *
+     * @param content 内容
+     */
+    void receiveCloud189AutoSave(String content);
+
+    /**
      * 接收 Emby 的神医通知
      *
      * @param embyNotifyParam emby 通知参数
      */
     void receiveEmbyFromShenYi(EmbyNotifyParam embyNotifyParam);
+
 }

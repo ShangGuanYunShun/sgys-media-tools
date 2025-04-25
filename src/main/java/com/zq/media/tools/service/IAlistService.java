@@ -2,6 +2,8 @@ package com.zq.media.tools.service;
 
 import com.zq.media.tools.dto.HandleFileDTO;
 
+import java.util.Set;
+
 /**
  * @author zhaoqiang
  * @version 1.0
@@ -10,12 +12,11 @@ import com.zq.media.tools.dto.HandleFileDTO;
 public interface IAlistService {
 
     /**
-     * 将文件夹文件从夸克复制到115
-     * 刮削115
+     * 处理云盘自动保存
      *
      * @param handleFile 处理文件
      */
-    void copyFileQuarkTo115(HandleFileDTO handleFile);
+    void handleCloudAutoSave(HandleFileDTO handleFile);
 
     /**
      * 处理目录（创建 STRM 并下载文件）
@@ -23,4 +24,12 @@ public interface IAlistService {
      * @param mediaPath 媒体路径
      */
     void processDic(String mediaPath);
+
+    /**
+     * 查询列表文件通过目录
+     *
+     * @param folderPath 文件夹路径
+     * @return {@link Set }<{@link String }>
+     */
+    Set<String> queryListFileByDic(String folderPath);
 }

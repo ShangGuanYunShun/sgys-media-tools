@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -28,11 +29,26 @@ public class ReceiveNotificationController {
 
     private final IReceiveNotificationService receiveNotificationService;
 
-    @Operation(summary = "接收来自夸克的自动转存通知")
+    @Operation(summary = "接收来自夸克的自动转存通知", tags = "网盘自动转存")
     @PostMapping("/quark/auto-save")
     public Result quarkAutoSave(@RequestBody Map<String, Object> request) {
         String content = (String) request.get("body");
         receiveNotificationService.receiveQuarkAutoSave(content);
+        return Result.success();
+    }
+
+    @Operation(summary = "接收来自天翼云盘的自动转存通知", tags = "网盘自动转存")
+    @PostMapping("/cloud189/auto-save")
+    public Result cloud189AutoSave(@RequestBody Map<String, Object> request) {
+        String content = (String) ((LinkedHashMap<String, Object>) request.get("markdown")).get("content");
+        receiveNotificationService.receiveCloud189AutoSave(content);
+        return Result.success();
+    }
+
+    @Operation(summary = "接收来自百度网盘的自动转存通知", tags = "网盘自动转存")
+    @PostMapping("/baidu/auto-save")
+    public Result baiduAutoSave(@RequestBody Map<String, Object> request) {
+        //TODO 后续完善
         return Result.success();
     }
 

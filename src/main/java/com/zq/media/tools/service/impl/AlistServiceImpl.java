@@ -65,13 +65,12 @@ public class AlistServiceImpl implements IAlistService {
     AtomicInteger taskIndex = new AtomicInteger(0);
 
     /**
-     * 将文件夹文件从夸克复制到115
-     * 刮削115
+     * 处理云盘自动保存
      *
-     * @param handleFile 处理文件
+     * @param handleFile handle 文件
      */
     @Override
-    public void copyFileQuarkTo115(HandleFileDTO handleFile) {
+    public void handleCloudAutoSave(HandleFileDTO handleFile) {
         // 1、获取目标文件夹下已存在的文件列表
         Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(handleFile.getFolderPath(), false));
         Set<String> existingEpisodes = convertSet(listFileResult.getCheckedData().getContent(), listFileRespDTO.Content::getName);
@@ -103,19 +102,19 @@ public class AlistServiceImpl implements IAlistService {
         String seriesName = FileUtil.getName(handleFile.getFolderPath());
         String scrapPath = configProperties.getAlist().getScrapPath().get(seriesName);
 
-        // 4、判断115网盘是否已经存在此文件了
-        Result<listFileRespDTO> listFileResult115 = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
-        Set<String> existingFiles115 = convertSet(listFileResult115.getCheckedData().getContent(), listFileRespDTO.Content::getName);
+        // 4、判断目标网盘是否已经存在此文件了
+        Result<listFileRespDTO> destListFileResult = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
+        Set<String> existingFiles = convertSet(destListFileResult.getCheckedData().getContent(), listFileRespDTO.Content::getName);
         newFiles.removeIf(file -> {
-            if (existingFiles115.contains(file)) {
-                log.info("115网盘已存在此文件: {}", file);
+            if (existingFiles.contains(file)) {
+                log.info("目标网盘已存在此文件: {}", file);
                 return true;
             }
             return false;
         });
 
         if (newFiles.isEmpty()) {
-            log.info("115网盘已存在所有文件,无需复制，直接刮削: {}", scrapPath);
+            log.info("目标网盘已存在所有文件,无需复制，直接刮削: {}", scrapPath);
             // 直接触发刮削和移动文件
             processCompletedCopy(seriesName, scrapPath);
             return;
@@ -133,6 +132,11 @@ public class AlistServiceImpl implements IAlistService {
         // 6、启动复制监控任务
         AtomicBoolean copyTaskDone = new AtomicBoolean(false);
         int taskIndex = this.taskIndex.addAndGet(1);
+        try {
+            // 等待10秒，防止同网盘内复制，无复制任务的情况
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException ignored) {
+        }
         int taskId = ThreadUtil.executeCycle(
                 () -> copyFileMonitor(copyTaskDone, taskIndex, seriesName, scrapPath),
                 5,
@@ -169,6 +173,18 @@ public class AlistServiceImpl implements IAlistService {
         } else {
             log.error("获取alist文件列表失败: {}", mediaPath);
         }
+    }
+
+    /**
+     * 查询列表文件通过目录
+     *
+     * @param folderPath 文件夹路径
+     * @return {@link Set }<{@link String }>
+     */
+    @Override
+    public Set<String> queryListFileByDic(String folderPath) {
+        Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(folderPath, true));
+        return convertSet(listFileResult.getCheckedData().getContent(), listFileRespDTO.Content::getName);
     }
 
     /**
@@ -260,8 +276,21 @@ public class AlistServiceImpl implements IAlistService {
             scrap();
         }
 
+        Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
+        Set<String> fileNames = convertSet(listFileResult.getCheckedData().getContent(),
+                content -> !"season.nfo".equals(content.getName()),
+                listFileRespDTO.Content::getName);
+
         // 移动文件到目标目录
-        moveFilesToTarget(scrapPath);
+        String targetPath = moveFilesToTarget(scrapPath, fileNames);
+
+        // 非115网盘触发生成strm和下载文件
+        if (!scrapPath.contains("115网盘")) {
+            // 生成strm和下载文件
+            for (String fileName : fileNames) {
+                createStrmAndDownloadFile(Paths.get(targetPath + "/" + fileName));
+            }
+        }
     }
 
     @NotNull
@@ -320,23 +349,24 @@ public class AlistServiceImpl implements IAlistService {
     /**
      * 刷新CD2目录
      * 通过执行Python脚本来刷新目录内容
+     * 主要针对于115网盘，因为通过alist挂载刮削115容易出现冗余文件
      *
      * @param scrapPath 需要刷新的目录路径
      */
     private void refreshCD2Directory(String scrapPath) {
-        String[] script = {"python3", "/app/python/clouddrive_api.py",
-                configProperties.getCloudDrive().getUrl(),
-                configProperties.getCloudDrive().getUsername(),
-                configProperties.getCloudDrive().getPassword(),
-                "list_files", scrapPath};
-
-        log.info("执行python脚本：{}", Arrays.asList(script));
-        String execResult = RuntimeUtil.execForStr(script);
-        log.info("python执行结果：{}", execResult);
-
         try {
+            String[] script = {"python3", "/app/python/clouddrive_api.py",
+                    configProperties.getCloudDrive().getUrl(),
+                    configProperties.getCloudDrive().getUsername(),
+                    configProperties.getCloudDrive().getPassword(),
+                    "list_files", scrapPath};
+
+            log.debug("执行python脚本：{}", Arrays.asList(script));
+            String execResult = RuntimeUtil.execForStr(script);
+            log.debug("python执行结果：{}", execResult);
+
             TimeUnit.SECONDS.sleep(10);
-        } catch (InterruptedException ignored) {
+        } catch (Exception ignored) {
         }
     }
 
@@ -345,17 +375,12 @@ public class AlistServiceImpl implements IAlistService {
      * 获取文件列表并移动到对应的电视剧目录
      *
      * @param scrapPath 源文件路径
+     * @param fileNames 文件名列表
      */
-    private void moveFilesToTarget(String scrapPath) {
-        Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
-        Set<String> fileNames = convertSet(listFileResult.getCheckedData().getContent(),
-                content -> !"season.nfo".equals(content.getName()),
-                listFileRespDTO.Content::getName);
-
+    private String moveFilesToTarget(String scrapPath, Set<String> fileNames) {
         // 获取电视节目名称和目标路径
         String tvShowName = FileUtil.mainName(FileUtil.getParent(scrapPath, 1));
         String targetPath = configProperties.getAlist().getSerializedTvShow().get(tvShowName);
-
         // 构建移动请求
         MoveFileReqDTO moveFileReqDTO = new MoveFileReqDTO()
                 .setSrcDir(scrapPath)
@@ -364,13 +389,14 @@ public class AlistServiceImpl implements IAlistService {
 
         log.info("移动文件：{}-{} -> {}", scrapPath, fileNames, targetPath);
         alistClient.moveFile(moveFileReqDTO);
-        // alist刷新115目录
         try {
             TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
         } catch (InterruptedException ignored) {
         }
+        // alist刷新目标目录
         alistClient.listFile(new ListFileReqDTO(targetPath, true));
         log.info("新增剧集处理完成：{}-{}", tvShowName, MediaUtil.getEpisodes(CollUtil.getFirst(fileNames)));
+        return targetPath;
     }
 
     /**

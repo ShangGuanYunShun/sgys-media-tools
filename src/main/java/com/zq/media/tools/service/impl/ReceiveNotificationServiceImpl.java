@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.zq.common.util.CollectionUtil.anyMatch;
 import static com.zq.common.util.CollectionUtil.convertList;
@@ -57,6 +59,11 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
     private final ITelegramBotService telegramService;
     private final TelegramBotProperties telegramBotProperties;
 
+    /**
+     * 接收夸克自动保存
+     *
+     * @param content 内容
+     */
     @Override
     public void receiveQuarkAutoSave(String content) {
         ThreadUtil.execute(() -> {
@@ -106,8 +113,54 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
             }
 
             // 调用服务方法处理
-            list.forEach(alistService::copyFileQuarkTo115);
+            list.forEach(alistService::handleCloudAutoSave);
         });
+    }
+
+    /**
+     * 接收天翼云盘自动保存
+     *
+     * @param content 内容
+     */
+    @Override
+    public void receiveCloud189AutoSave(String content) {
+        String seriesName = content.split("\n")[0].split("/")[0];
+        Set<String> episodes = getEpisodesByCloud189Content(content);
+        for (String handleFolder : configProperties.getDriverCloud189().getHandleFolders()) {
+            String folderPath = "/天翼云盘" + handleFolder;
+            Set<String> fileNames = alistService.queryListFileByDic(folderPath);
+            if (anyMatch(fileNames, seriesName::equals)) {
+                alistService.handleCloudAutoSave(new HandleFileDTO(folderPath + "/" + seriesName, episodes));
+            }
+        }
+    }
+
+    /**
+     * 提取剧集名称（去除最后的括号部分，比如年份）
+     *
+     * @param rawTitle 原始标题，如 "棋士 (2025)"
+     * @return 提取后的剧名，如 "棋士"
+     */
+    private String extractTitle(String rawTitle) {
+        // 匹配末尾类似于 " (2025)" 的部分并移除
+        return rawTitle.replaceAll("\\s*\\([^\\)]*\\)\\s*$", "").trim();
+    }
+
+    /**
+     * 获取转存剧集通过天翼与云盘自动转存内容
+     *
+     * @param content 内容
+     * @return {@link Set }<{@link String }>
+     */
+    private Set<String> getEpisodesByCloud189Content(String content) {
+        Pattern pattern = Pattern.compile("<font[^>]*>(.*?)</font>");
+        Matcher matcher = pattern.matcher(content);
+
+        Set<String> episodes = new HashSet<>();
+        while (matcher.find()) {
+            episodes.add(matcher.group(1).trim());
+        }
+        return episodes;
     }
 
     /**
