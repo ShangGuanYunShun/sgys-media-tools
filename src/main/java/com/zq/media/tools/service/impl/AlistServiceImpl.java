@@ -21,6 +21,7 @@ import com.zq.media.tools.feign.AlistClient;
 import com.zq.media.tools.feign.TtmClient;
 import com.zq.media.tools.properties.ConfigProperties;
 import com.zq.media.tools.service.IAlistService;
+import com.zq.media.tools.util.MediaUtil;
 import com.zq.media.tools.util.StrmUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -82,7 +83,7 @@ public class AlistServiceImpl implements IAlistService {
             boolean exists = false;
             if (handleFile.getIsSingleTask()) {
                 exists = anyMatch(existingEpisodes,
-                        existingFile -> !existingFile.equals(file) && StrmUtil.areEpisodesEqual(existingFile, file));
+                        existingFile -> !existingFile.equals(file) && MediaUtil.areEpisodesEqual(existingFile, file));
             }
             if (exists) {
                 log.info("剧集已存在: {}\n{}", handleFile.getFolderPath(), file);
@@ -276,16 +277,16 @@ public class AlistServiceImpl implements IAlistService {
                 String[] newParts = parts[1].split("-");
 
                 // 旧季号，如 01
-                String oldSeason = StrmUtil.getSeason(oldParts[0]);
+                String oldSeason = MediaUtil.getSeason(oldParts[0]);
                 // 135
-                int oldStart = StrmUtil.getEpisode(oldParts[0]);
+                int oldStart = MediaUtil.getEpisode(oldParts[0]);
                 // 152
-                int oldEnd = StrmUtil.getEpisode(oldParts[1]);
+                int oldEnd = MediaUtil.getEpisode(oldParts[1]);
 
                 // 新季号，如 07
-                String newSeason = StrmUtil.getSeason(newParts[0]);
+                String newSeason = MediaUtil.getSeason(newParts[0]);
                 // 11
-                int newStart = StrmUtil.getEpisode(newParts[0]);
+                int newStart = MediaUtil.getEpisode(newParts[0]);
 
                 // 动态构造正则匹配 SxxE135 - SxxE252
                 String regex = "S" + oldSeason + "E(" + oldStart;
@@ -301,7 +302,7 @@ public class AlistServiceImpl implements IAlistService {
                 while (matcher.find()) {
                     String oldEpisode = matcher.group();
                     // 提取集数
-                    int oldEpisodeNum = StrmUtil.getEpisode(oldEpisode);
+                    int oldEpisodeNum = MediaUtil.getEpisode(oldEpisode);
                     // 计算新集数
                     int newEpisodeNum = newStart + (oldEpisodeNum - oldStart);
                     String newEpisode = StrUtil.format("S{}E{}", newSeason, newEpisodeNum);
@@ -369,7 +370,7 @@ public class AlistServiceImpl implements IAlistService {
         } catch (InterruptedException ignored) {
         }
         alistClient.listFile(new ListFileReqDTO(targetPath, true));
-        log.info("新增剧集处理完成：{}-{}", tvShowName, StrmUtil.getEpisodes(CollUtil.getFirst(fileNames)));
+        log.info("新增剧集处理完成：{}-{}", tvShowName, MediaUtil.getEpisodes(CollUtil.getFirst(fileNames)));
     }
 
     /**
@@ -378,7 +379,7 @@ public class AlistServiceImpl implements IAlistService {
      * @param path 路径
      */
     private void createStrmAndDownloadFile(Path path) {
-        if (StrmUtil.isVideoFile(path)) {
+        if (MediaUtil.isVideoFile(path)) {
             String strmPath = StrmUtil.generateStrmFiles(path);
             log.info("生成strm文件: {}", strmPath);
         } else {

@@ -21,7 +21,6 @@ import com.zq.media.tools.service.IAlistService;
 import com.zq.media.tools.service.IReceiveNotificationService;
 import com.zq.media.tools.service.ITelegramBotService;
 import com.zq.media.tools.util.MediaUtil;
-import com.zq.media.tools.util.StrmUtil;
 import feign.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -92,7 +91,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                     }
                     handleFileDTO = createHandleFileDTO(); // 重置 DTO
                     isFolderPathSet = false;
-                } else if (isFolderPathSet && StrmUtil.isEpisodes(str)) {
+                } else if (isFolderPathSet && MediaUtil.isEpisodes(str)) {
                     // 处理文件路径
                     String cleanedPath = str.substring(str.indexOf("──") + 2) // 去掉前缀符号
                             .replaceAll("[\\p{Cf}\\uFEFF🎞️]", "") // 清理特殊字符
@@ -229,7 +228,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                 }
                 Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(deleteDic, true));
                 deleteNames.addAll(convertList(listFileResult.getCheckedData().getContent(),
-                        file -> anyMatch(deleteNames, episodeName -> StrmUtil.areEpisodesEqual(file.getName(), episodeName)),
+                        file -> anyMatch(deleteNames, episodeName -> MediaUtil.areEpisodesEqual(file.getName(), episodeName)),
                         listFileRespDTO.Content::getName));
                 messageJoiner.add("片名：" + embyNotifyParam.getItem().getSeriesName());
                 messageJoiner.add("季：" + embyNotifyParam.getItem().getSeasonName());

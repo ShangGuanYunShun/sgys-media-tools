@@ -20,6 +20,7 @@ import com.zq.media.tools.feign.Driver115Client;
 import com.zq.media.tools.feign.Life115Client;
 import com.zq.media.tools.properties.ConfigProperties;
 import com.zq.media.tools.service.IMedia115Service;
+import com.zq.media.tools.util.MediaUtil;
 import com.zq.media.tools.util.StrmUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -445,7 +446,7 @@ public class Driver115 {
      * @return 完整的本地文件路径
      */
     private Path getFullPath(Path path) {
-        boolean isVideoFile = StrmUtil.isVideoFile(path);
+        boolean isVideoFile = MediaUtil.isVideoFile(path);
         if (isVideoFile) {
             return Paths.get(configProperties.getServer().getDriver115Path(),
                     path.getParent().toString(),
@@ -566,7 +567,7 @@ public class Driver115 {
         // 查询文件夹下的所有视频文件
         List<Media115> renameFiles = media115Service.queryDescendantsByFileId(pendingFile.getFileId());
         for (Media115 renameFile : renameFiles) {
-            if (StrmUtil.isVideoFile(renameFile.getFileName())) {
+            if (MediaUtil.isVideoFile(renameFile.getFileName())) {
                 Path renamePath = Paths.get(renameFile.getPath()).getParent().resolve(pendingFile.getFileName());
                 renameFile.setPath(renamePath.toString());
                 media115Service.updateById(renameFile);
@@ -587,7 +588,7 @@ public class Driver115 {
      */
     @SneakyThrows
     private void downloadFileOrCreateStrm(Path path, String pickCode) {
-        if (StrmUtil.isVideoFile(path)) {
+        if (MediaUtil.isVideoFile(path)) {
             String strmPath = StrmUtil.generateStrmFiles(Paths.get(configProperties.getAlist().getDriver115Path() + path));
             log.info("生成strm文件: {}", strmPath);
             strmFileCount++;
