@@ -13,6 +13,9 @@ public class FeignEmbyConfig {
 
     @Bean
     public RequestInterceptor requestInterceptor(ConfigProperties configProperties) {
-        return requestTemplate -> requestTemplate.header("X-Emby-Token", configProperties.getEmby().getApiKey());
+        return requestTemplate -> {
+            requestTemplate.uri(requestTemplate.url().replace("[userId]", configProperties.getEmby().getUserId()));
+            requestTemplate.header("X-Emby-Token", configProperties.getEmby().getApiKey());
+        };
     }
 }

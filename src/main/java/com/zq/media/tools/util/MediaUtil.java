@@ -148,6 +148,20 @@ public class MediaUtil {
     }
 
     /**
+     * 检查是否匹配到季数
+     *
+     * @param input 输入字符串，例如 "第 1 季"
+     * @return 是否成功匹配到季数
+     */
+    public static boolean isSeasonNumberMatched(String input) {
+        String regex = "第\\s*(\\d+)\\s*季";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+
+        return matcher.find();
+    }
+
+    /**
      * 检查是否匹配到集数
      *
      * @param input 输入字符串，例如 "第 1 集"

@@ -1,6 +1,7 @@
 package com.zq.media.tools.feign;
 
 import com.zq.media.tools.config.FeignEmbyConfig;
+import com.zq.media.tools.dto.resp.emby.ItemRespDTO;
 import com.zq.media.tools.dto.resp.emby.MediaPlaybackInfoRespDTO;
 import feign.Response;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -26,6 +27,15 @@ public interface EmbyClient {
      */
     @GetMapping("/emby/Items/{itemId}/Images/Primary")
     Response downloadImage(@PathVariable("itemId") String itemId, @RequestParam("tag") String tag);
+
+    /**
+     * 获取项目
+     *
+     * @param itemId 项目id
+     * @return {@link ItemRespDTO }
+     */
+    @GetMapping("/emby/Users/[userId]/Items/{itemId}")
+    ItemRespDTO getItem(@PathVariable("itemId") String itemId);
 
     /**
      * 获取播放信息
