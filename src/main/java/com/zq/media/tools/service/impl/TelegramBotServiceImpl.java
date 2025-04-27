@@ -60,6 +60,7 @@ public class TelegramBotServiceImpl implements ITelegramBotService {
                 .text(message)
                 .parseMode(parseMode)
                 .build();
+        sendMessage.enableHtml(true);
         try {
             telegramClient.execute(sendMessage);
         } catch (TelegramApiException e) {

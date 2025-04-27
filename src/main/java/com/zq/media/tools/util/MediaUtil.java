@@ -150,11 +150,11 @@ public class MediaUtil {
     /**
      * 检查是否匹配到季数
      *
-     * @param input 输入字符串，例如 "第 1 季"
+     * @param input 输入字符串，例如 "第 1 季"，"第1季"
      * @return 是否成功匹配到季数
      */
     public static boolean isSeasonNumberMatched(String input) {
-        String regex = "第\\s*(\\d+)\\s*季";
+        String regex = "第\\s*.*?\\s*季";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
 
@@ -164,11 +164,11 @@ public class MediaUtil {
     /**
      * 检查是否匹配到集数
      *
-     * @param input 输入字符串，例如 "第 1 集"
+     * @param input 输入字符串，例如 "第 1 集"，"第一集"
      * @return 是否成功匹配到集数
      */
     public static boolean isEpisodeNumberMatched(String input) {
-        String regex = "第\\s*(\\d+)\\s*集";
+        String regex = "第\\s*.*?\\s*集";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
 

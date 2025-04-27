@@ -1,6 +1,5 @@
 package com.zq.media.tools.dto.req.alist;
 
-import cn.hutool.core.collection.ListUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,7 +35,7 @@ public class RenameFileReqDTO {
 
     public RenameFileReqDTO(String srcDir, String srcName, String newName) {
         this.srcDir = srcDir;
-        this.renameFileList = ListUtil.of(new RenameFile(srcName, newName));
+        this.renameFileList = List.of(new RenameFile(srcName, newName));
     }
 
     @Getter

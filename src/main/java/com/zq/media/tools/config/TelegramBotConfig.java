@@ -4,7 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zq.media.tools.properties.TelegramBotProperties;
 import com.zq.media.tools.service.ITelegramBotService;
-import com.zq.media.tools.telegram.bot.SgysTelegramBot;
+import com.zq.media.tools.telegram.handler.CommandHandler;
+import com.zq.media.tools.telegram.handler.command.GetImageCommand;
 import lombok.RequiredArgsConstructor;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
@@ -15,12 +16,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
+import org.telegram.telegrambots.extensions.bots.commandbot.commands.helpCommand.HelpCommand;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.TelegramOkHttpClientFactory;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static java.util.Optional.ofNullable;
@@ -81,9 +85,27 @@ public class TelegramBotConfig {
         return new TelegramBotsLongPollingApplication(() -> objectMapper, () -> okClient);
     }
 
+//    @Bean
+//    public SgysTelegramBot sgysTelegramBot(ITelegramBotService telegramService, TelegramBotProperties telegramBotProperties) {
+//        return new SgysTelegramBot(telegramService, telegramBotProperties);
+//    }
+
+    // region 机器人命令
     @Bean
-    public SgysTelegramBot sgysTelegramBot(ITelegramBotService telegramService, TelegramBotProperties telegramBotProperties) {
-        return new SgysTelegramBot(telegramService, telegramBotProperties);
+    public HelpCommand helpCommand() {
+        return new HelpCommand();
+    }
+
+    @Bean
+    public GetImageCommand getImageCommand(ITelegramBotService telegramService) {
+        return new GetImageCommand(telegramService);
+    }
+    // endregion
+
+    @Bean
+    public CommandHandler commandHandler(TelegramClient telegramClient, ITelegramBotService telegramService,
+                                         TelegramBotProperties telegramBotProperties, List<BotCommand> commands) {
+        return new CommandHandler(telegramClient, telegramService, telegramBotProperties, commands);
     }
 
     @RequiredArgsConstructor

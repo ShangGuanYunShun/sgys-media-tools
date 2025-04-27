@@ -1,4 +1,4 @@
-package com.zq.media.tools.telegram.bot;
+package com.zq.media.tools.telegram.handler;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.Resource;

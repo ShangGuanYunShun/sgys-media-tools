@@ -17,6 +17,7 @@
         <sgys.version>1.0</sgys.version>
 
         <telegrambots.version>8.3.0</telegrambots.version>
+        <jsoup.version>1.17.2</jsoup.version>
     </properties>
 
     <dependencyManagement>
@@ -106,6 +107,25 @@
             <artifactId>telegrambots-client</artifactId>
             <version>${telegrambots.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-extensions</artifactId>
+            <version>${telegrambots.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.telegram</groupId>
+                    <artifactId>telegrambots-webhook</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
+        </dependency>
+
 
     </dependencies>
 
