@@ -5,10 +5,10 @@
   <parent>
     <groupId>com.zq</groupId>
     <artifactId>sgys-core-module</artifactId>
-    <version>1.0</version>
+      <version>2.0</version>
   </parent>
   <artifactId>sgys-core-mybatisplus</artifactId>
-  <version>1.0</version>
+    <version>2.0</version>
   <dependencies>
     <dependency>
       <groupId>com.zq</groupId>
@@ -16,17 +16,29 @@
     </dependency>
     <dependency>
       <groupId>com.baomidou</groupId>
-      <artifactId>mybatis-plus-boot-starter</artifactId>
-      <version>${mybatis.plus.version}</version>
+        <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+    </dependency>
+      <dependency>
+          <groupId>com.baomidou</groupId>
+          <artifactId>mybatis-plus-jsqlparser</artifactId>
     </dependency>
     <dependency>
       <groupId>com.alibaba</groupId>
-      <artifactId>druid-spring-boot-starter</artifactId>
-      <version>${druid.version}</version>
+        <artifactId>druid-spring-boot-3-starter</artifactId>
+    </dependency>
+      <dependency>
+          <groupId>com.baomidou</groupId>
+          <artifactId>dynamic-datasource-spring-boot3-starter</artifactId>
+          <exclusions>
+              <exclusion>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-undertow</artifactId>
+              </exclusion>
+          </exclusions>
     </dependency>
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-annotations</artifactId>
+        <artifactId>swagger-annotations-jakarta</artifactId>
       <optional>true</optional>
     </dependency>
   </dependencies>

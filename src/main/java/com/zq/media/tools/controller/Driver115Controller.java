@@ -3,14 +3,16 @@ package com.zq.media.tools.controller;
 import com.zq.common.domain.Result;
 import com.zq.media.tools.driver.Driver115;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 /**
@@ -30,6 +32,10 @@ public class Driver115Controller {
     private final Driver115 driver115;
 
     @Operation(summary = "处理115网盘的生活动作")
+    @Parameters({
+            @Parameter(name = "beginTime", description = "开始时间", required = true),
+            @Parameter(name = "endTime", description = "结束时间"),
+    })
     @GetMapping("/behavior/handle")
     public Result handleBehavior(@NotNull(message = "开始时间不能为空") LocalDateTime beginTime, LocalDateTime endTime) {
         driver115.handleBehavior(beginTime, endTime);

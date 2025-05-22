@@ -1,7 +1,7 @@
 package com.zq.media.tools.feign;
 
 import com.zq.common.domain.Result;
-import com.zq.media.tools.config.FeignAlistConfig;
+import com.zq.media.tools.config.feign.FeignAlistConfig;
 import com.zq.media.tools.dto.req.alist.CopyFileReqDTO;
 import com.zq.media.tools.dto.req.alist.DeleteFileReqDTO;
 import com.zq.media.tools.dto.req.alist.GetFileReqDTO;

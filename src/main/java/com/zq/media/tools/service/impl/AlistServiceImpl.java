@@ -1,10 +1,5 @@
 package com.zq.media.tools.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.RuntimeUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.HttpUtil;
 import com.zq.common.domain.Result;
 import com.zq.common.util.ThreadUtil;
 import com.zq.media.tools.dto.HandleFileDTO;
@@ -25,6 +20,12 @@ import com.zq.media.tools.util.MediaUtil;
 import com.zq.media.tools.util.StrmUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.hutool.core.collection.CollUtil;
+import org.dromara.hutool.core.io.file.FileNameUtil;
+import org.dromara.hutool.core.io.file.FileUtil;
+import org.dromara.hutool.core.text.StrUtil;
+import org.dromara.hutool.core.util.RuntimeUtil;
+import org.dromara.hutool.http.client.HttpDownloader;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
@@ -99,7 +100,7 @@ public class AlistServiceImpl implements IAlistService {
         // 3、刷新文件列表并准备复制
         alistClient.listFile(new ListFileReqDTO(handleFile.getFolderPath(), true));
         // 剧集名
-        String seriesName = FileUtil.getName(handleFile.getFolderPath());
+        String seriesName = FileNameUtil.getName(handleFile.getFolderPath());
         String scrapPath = configProperties.getAlist().getScrapPath().get(seriesName);
 
         // 4、判断目标网盘是否已经存在此文件了
@@ -379,7 +380,7 @@ public class AlistServiceImpl implements IAlistService {
      */
     private String moveFilesToTarget(String scrapPath, Set<String> fileNames) {
         // 获取电视节目名称和目标路径
-        String tvShowName = FileUtil.mainName(FileUtil.getParent(scrapPath, 1));
+        String tvShowName = FileNameUtil.mainName(FileUtil.getParent(scrapPath, 1));
         String targetPath = configProperties.getAlist().getSerializedTvShow().get(tvShowName);
         // 构建移动请求
         MoveFileReqDTO moveFileReqDTO = new MoveFileReqDTO()
@@ -415,7 +416,7 @@ public class AlistServiceImpl implements IAlistService {
                     TimeUnit.SECONDS.sleep(configProperties.getApiRateLimit());
                 } catch (InterruptedException ignored) {
                 }
-                HttpUtil.downloadFile(configProperties.getAlist().getMediaUrl() + path, fullPath.toFile());
+                HttpDownloader.of(configProperties.getAlist().getMediaUrl() + path).downloadFile(fullPath.toFile());
                 log.info("下载文件：{}", fullPath);
             }
         }

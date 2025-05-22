@@ -1,4 +1,4 @@
-package com.zq.media.tools.config;
+package com.zq.media.tools.config.feign;
 
 import com.zq.media.tools.properties.ConfigProperties;
 import feign.RequestInterceptor;

@@ -1,6 +1,6 @@
 package com.zq.media.tools.feign;
 
-import com.zq.media.tools.config.FeignTtmConfig;
+import com.zq.media.tools.config.feign.FeignTtmConfig;
 import com.zq.media.tools.dto.req.ttm.TtmReqDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;

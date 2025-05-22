@@ -1,9 +1,5 @@
 package com.zq.media.tools.driver;
 
-import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.map.MapUtil;
-import cn.hutool.core.util.StrUtil;
 import com.zq.media.tools.dto.PendingProcessFileDTO;
 import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
 import com.zq.media.tools.dto.resp.driver115.BehaviorDetailRespDTO;
@@ -25,12 +21,14 @@ import com.zq.media.tools.util.StrmUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
+import org.dromara.hutool.core.collection.CollUtil;
+import org.dromara.hutool.core.io.file.FileNameUtil;
+import org.dromara.hutool.core.io.file.FileUtil;
+import org.dromara.hutool.core.map.MapUtil;
+import org.dromara.hutool.core.text.StrUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -64,7 +62,7 @@ public class Driver115 {
     private final ConfigProperties configProperties;
     private final Driver115Client driver115Client;
     private final Life115Client life115Client;
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final IMedia115Service media115Service;
     private final AlistClient alistClient;
 
@@ -214,30 +212,6 @@ public class Driver115 {
     }
 
     /**
-     * 处理目录类型的文件
-     */
-    private void processCatalog(BehaviorDetailRespDTO behaviorDetailRespDTO, String path, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
-        // 处理删除文件操作
-        if (behaviorType == BehaviorType.DELETE_FILE) {
-            PendingProcessFileDTO pendingFile = createPendingFileFromItem(behaviorDetailRespDTO, path, behaviorType, true);
-            pendingProcessFiles.add(pendingFile);
-            log.info("操作类型：{}，文件路径： {}", behaviorType, path);
-        } else {
-            // 递归处理目录内容
-            fetchAllFilesInDirectory(behaviorDetailRespDTO.getFileId(), path, behaviorType, pendingProcessFiles);
-        }
-    }
-
-    /**
-     * 处理普通文件
-     */
-    private void processPendingFile(BehaviorDetailRespDTO behaviorDetailRespDTO, String path, BehaviorType behaviorType, List<PendingProcessFileDTO> pendingProcessFiles) {
-        PendingProcessFileDTO pendingFile = createPendingFileFromItem(behaviorDetailRespDTO, path, behaviorType, false);
-        pendingProcessFiles.add(pendingFile);
-        log.info("操作类型：{}，文件路径： {}", behaviorType, path);
-    }
-
-    /**
      * 获取文件的下载URL和相关Cookie信息
      *
      * @param pickCode 文件的唯一标识码
@@ -245,18 +219,15 @@ public class Driver115 {
      */
     private Map<String, String> getFileUrlAndCookies(String pickCode) {
         Map<String, String> result = new HashMap<>();
-        // 构建请求头
-        HttpHeaders httpHeaders = buildHttpHeaders();
         String url = "https://webapi.115.com/files/download?pickcode=" + pickCode;
-
         try {
             // 发送HTTP请求获取下载信息
-            ResponseEntity<GetDownloadUrlRespDTO> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    new HttpEntity<>(httpHeaders),
-                    GetDownloadUrlRespDTO.class
-            );
+            ResponseEntity<GetDownloadUrlRespDTO> response = restClient.get()
+                    .uri(url)
+                    .header("Cookie", configProperties.getDriver115().getCookie())
+                    .header("User-Agent", configProperties.getDriver115().getUserAgent())
+                    .retrieve()
+                    .toEntity(GetDownloadUrlRespDTO.class);
 
             // 处理成功响应
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().isState()) {
@@ -330,16 +301,6 @@ public class Driver115 {
     }
 
     /**
-     * 构建HTTP请求头
-     */
-    private HttpHeaders buildHttpHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Cookie", configProperties.getDriver115().getCookie());
-        headers.set("User-Agent", configProperties.getDriver115().getUserAgent());
-        return headers;
-    }
-
-    /**
      * 从响应头中提取Cookie信息
      */
     private String extractCookies(List<String> cookieHeaders) {
@@ -347,7 +308,7 @@ public class Driver115 {
             return "";
         }
         // 使用正则表达式匹配Cookie
-        Matcher matcher = COOKIE_PATTERN.matcher(CollectionUtil.join(cookieHeaders, ";"));
+        Matcher matcher = COOKIE_PATTERN.matcher(CollUtil.join(cookieHeaders, ";"));
         StringJoiner cookieJoiner = new StringJoiner(";");
         while (matcher.find()) {
             cookieJoiner.add(matcher.group());
@@ -419,7 +380,7 @@ public class Driver115 {
             case COPY_FOLDER:
             case UPLOAD_FILE:
             case UPLOAD_IMAGE_FILE:
-                handleFileCreation(fullPath, path, pendingFile);
+                handleFileCreation(pendingFile, fullPath, path);
                 break;
             case MOVE_FILE:
             case MOVE_IMAGE_FILE:
@@ -439,6 +400,27 @@ public class Driver115 {
     }
 
     /**
+     * 处理文件（夹）创建
+     * 创建新文件并保存相关信息到数据库
+     *
+     * @param pendingFile 待处理文件
+     * @param fullPath    完整路径
+     * @param path        路径
+     */
+    private void handleFileCreation(PendingProcessFileDTO pendingFile, Path fullPath, Path path) {
+        fileCreation(fullPath, path, pendingFile);
+        if (pendingFile.getIsDic()) {
+            List<PendingProcessFileDTO> pendingProcessFiles = new ArrayList<>();
+            // 递归处理目录内容
+            fetchAllFilesInDirectory(pendingFile.getFileId(), pendingFile.getFilePath(), pendingFile.getBehaviorType(), pendingProcessFiles);
+            pendingProcessFiles.forEach(file -> {
+                Path filePath = Paths.get(file.getFilePath());
+                fileCreation(getFullPath(filePath), filePath, file);
+            });
+        }
+    }
+
+    /**
      * 获取完整文件路径
      * 根据文件类型构建完整的本地文件路径
      *
@@ -450,7 +432,7 @@ public class Driver115 {
         if (isVideoFile) {
             return Paths.get(configProperties.getServer().getDriver115Path(),
                     path.getParent().toString(),
-                    FileUtil.mainName(path.getFileName().toString()) + ".strm");
+                    FileNameUtil.mainName(path.getFileName().toString()) + ".strm");
         }
         return Paths.get(configProperties.getServer().getDriver115Path(), path.toString());
     }
@@ -463,7 +445,7 @@ public class Driver115 {
      * @param path        相对文件路径
      * @param pendingFile 待处理文件信息
      */
-    private void handleFileCreation(Path fullPath, Path path, PendingProcessFileDTO pendingFile) {
+    private void fileCreation(Path fullPath, Path path, PendingProcessFileDTO pendingFile) {
         // 检查是否在忽略列表中
         if (shouldIgnore(path.toString())) {
             log.debug("忽略{}：{}", pendingFile.getIsDic() ? "文件夹" : "文件", path);
@@ -504,16 +486,7 @@ public class Driver115 {
                 log.debug("忽略{}：{}", pendingFile.getIsDic() ? "文件夹" : "文件", path);
                 return;
             }
-            handleFileCreation(fullPath, path, pendingFile);
-            if (pendingFile.getIsDic()) {
-                List<PendingProcessFileDTO> pendingProcessFiles = new ArrayList<>();
-                // 递归处理目录内容
-                fetchAllFilesInDirectory(pendingFile.getFileId(), pendingFile.getFilePath(), pendingFile.getBehaviorType(), pendingProcessFiles);
-                pendingProcessFiles.forEach(file -> {
-                    Path filePath = Paths.get(file.getFilePath());
-                    handleFileCreation(getFullPath(filePath), filePath, file);
-                });
-            }
+            handleFileCreation(pendingFile, fullPath, path);
         } else {
             // 删除旧文件
             handleFileDeletion(pendingFile);

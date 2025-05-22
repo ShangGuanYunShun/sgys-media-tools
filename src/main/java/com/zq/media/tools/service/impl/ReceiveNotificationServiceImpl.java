@@ -1,9 +1,5 @@
 package com.zq.media.tools.service.impl;
 
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.util.URLUtil;
-import cn.hutool.http.HttpStatus;
 import com.zq.common.domain.Result;
 import com.zq.common.util.ThreadUtil;
 import com.zq.media.tools.dto.HandleFileDTO;
@@ -26,6 +22,11 @@ import feign.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.hutool.core.io.file.FileUtil;
+import org.dromara.hutool.core.net.url.UrlDecoder;
+import org.dromara.hutool.core.text.StrUtil;
+import org.dromara.hutool.core.text.split.SplitUtil;
+import org.dromara.hutool.http.meta.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -68,7 +69,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
     @Override
     public void receiveQuarkAutoSave(String content) {
         ThreadUtil.execute(() -> {
-            List<String> split = StrUtil.split(content, "\\n");
+            List<String> split = SplitUtil.split(content, "\\n");
             List<HandleFileDTO> list = new ArrayList<>();
 
             // 初始化文件 DTO
@@ -190,7 +191,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
      */
     @SneakyThrows
     private void favoritesUpdate(EmbyNotifyParam embyNotifyParam) {
-        ItemRespDTO item = embyClient.getItem(embyNotifyParam.getItem().getId());
+        ItemRespDTO itemInfo = embyClient.getItem(embyNotifyParam.getItem().getSeriesId());
         MediaPlaybackInfoRespDTO mediaPlaybackInfoRespDTO = embyClient.getPlaybackInfo(embyNotifyParam.getItem().getId());
         MediaPlaybackInfoRespDTO.MediaSource mediaSource = mediaPlaybackInfoRespDTO.getMediaSources().get(0);
         String sizeStr = MediaUtil.formatSize(mediaSource.getSize());
@@ -207,7 +208,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
         messageJoiner.add("帧率：" + mediaSource.getMediaStreams().get(0).getAverageFrameRate().intValue());
         messageJoiner.add("上映日期：" + embyNotifyParam.getItem().getProductionYear());
         messageJoiner.add("内容简介：" + Optional.ofNullable(embyNotifyParam.getItem().getOverview()).orElse(""));
-        messageJoiner.add(StrUtil.format("相关链接： [TMDB](https://www.themoviedb.org/tv/{}/season/{}/episode/{})", item.getProviderIds().getTmdb(),
+        messageJoiner.add(StrUtil.format("相关链接： [TMDB](https://www.themoviedb.org/tv/{}/season/{}/episode/{})", itemInfo.getProviderIds().getTmdb(),
                 embyNotifyParam.getItem().getParentIndexNumber(), embyNotifyParam.getItem().getIndexNumber()));
 
         Response response = null;
@@ -320,7 +321,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
 
             if (isMountPathSection && line.startsWith(configProperties.getAlist().getMediaUrl())) {
                 if (configProperties.getEncodeStrmPath()) {
-                    paths.add(URLUtil.decode(line.substring(configProperties.getAlist().getMediaUrl().length())));
+                    paths.add(UrlDecoder.decode(line.substring(configProperties.getAlist().getMediaUrl().length())));
                 } else {
                     paths.add(line.substring(configProperties.getAlist().getMediaUrl().length()));
                 }

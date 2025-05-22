@@ -1,6 +1,6 @@
 package com.zq.media.tools.feign;
 
-import com.zq.media.tools.config.Feign115Config;
+import com.zq.media.tools.config.feign.Feign115Config;
 import com.zq.media.tools.dto.resp.driver115.LifeListRespDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;

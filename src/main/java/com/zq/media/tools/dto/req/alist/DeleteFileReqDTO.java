@@ -1,6 +1,5 @@
 package com.zq.media.tools.dto.req.alist;
 
-import cn.hutool.core.collection.CollUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,7 +34,7 @@ public class DeleteFileReqDTO {
 
     public DeleteFileReqDTO(String dir, String... names) {
         this.dir = dir;
-        this.names = CollUtil.newHashSet(names);
+        this.names = Set.of(names);
     }
 
 }

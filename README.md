@@ -16,12 +16,10 @@
 services:
   sgys-media-tools:
     container_name: sgys-media-tools
-    image: sgys-media-tools:1.0
+    image: sgys-media-tools:2.0
     network_mode: bridge 
     environment:
       TZ: Asia/Shanghai
-      #JAVA_OPTS: -Dloader.path=lib -Dfile.encoding=utf-8 -Xms256m -Xmx256m -Xss256k -XX:MetaspaceSize=64m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+AlwaysPreTouch -XX:-OmitStackTraceInFastThrow #Docerfile中有默认配置，可在此处选择覆盖
-      SPRINGBOOT_OPTS: --logging.config=/app/config/logback.xml
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /data/sgys-media-tools/logs:/app/logs
@@ -162,8 +160,3 @@ config.json文件配置推送路径
 ![片头片尾更新](./img/tg通知/片头片尾更新.png)
 ![深度删除](./img/tg通知/深度删除.png)
 #### 参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request

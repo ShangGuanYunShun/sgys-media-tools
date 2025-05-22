@@ -1,13 +1,12 @@
 package com.zq.media.tools.util;
 
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.URLUtil;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.http.HttpStatus;
 import com.zq.media.tools.properties.ConfigProperties;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.hutool.core.io.file.FileNameUtil;
+import org.dromara.hutool.core.io.file.FileUtil;
+import org.dromara.hutool.core.net.url.UrlEncoder;
+import org.dromara.hutool.http.client.HttpDownloader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -33,9 +32,9 @@ public class StrmUtil {
      * @return {@link String }
      */
     public static String generateStrmFiles(Path filePath) {
-        Path strmPath = Paths.get(configProperties.getServer().getBasePath(), filePath.getParent().toString(), FileUtil.mainName(filePath.getFileName().toString()) + ".strm");
+        Path strmPath = Paths.get(configProperties.getServer().getBasePath(), filePath.getParent().toString(), FileNameUtil.mainName(filePath.getFileName().toString()) + ".strm");
         String videoRelativeUrl = configProperties.getAlist().getMediaUrl() + filePath.toString().replace("\\", "/").replace("//", "/");
-        FileUtil.writeUtf8String(configProperties.getEncodeStrmPath() ? URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8) : videoRelativeUrl, strmPath.toString());
+        FileUtil.writeUtf8String(configProperties.getEncodeStrmPath() ? UrlEncoder.encodeQuery(videoRelativeUrl, StandardCharsets.UTF_8) : videoRelativeUrl, strmPath.toString());
         return strmPath.toString();
     }
 
@@ -47,7 +46,7 @@ public class StrmUtil {
      */
     public static void writeStrmFiles(Path strmFilePath, String path) {
         String videoRelativeUrl = configProperties.getAlist().getMediaUrl() + path.replace("\\", "/").replace("//", "/");
-        FileUtil.writeUtf8String(configProperties.getEncodeStrmPath() ? URLUtil.encode(videoRelativeUrl, StandardCharsets.UTF_8) : videoRelativeUrl, strmFilePath.toString());
+        FileUtil.writeUtf8String(configProperties.getEncodeStrmPath() ? UrlEncoder.encodeQuery(videoRelativeUrl, StandardCharsets.UTF_8) : videoRelativeUrl, strmFilePath.toString());
     }
 
     /**
@@ -59,18 +58,11 @@ public class StrmUtil {
      */
     @SneakyThrows
     public static void downloadFile(String url, String cookie, Path savePath) {
-        HttpRequest request = HttpRequest.get(url)
+        HttpDownloader.of(url)
                 .header("Cookie", cookie)
                 .header("User-Agent", configProperties.getDriver115().getUserAgent())
-                .timeout(10000);
-        HttpResponse response = request.execute();
-
-        // 检查响应状态是否成功
-        if (response.getStatus() == HttpStatus.HTTP_OK) {
-            FileUtil.writeBytes(response.bodyBytes(), savePath.toString());
-        } else {
-            log.warn("远程下载文件失败：\n{} \n{}", request, response);
-        }
+                .setTimeout(10000)
+                .downloadFile(savePath.toFile());
     }
 
     @Autowired

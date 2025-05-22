@@ -1,4 +1,4 @@
-package com.zq.media.tools.config;
+package com.zq.media.tools.config.feign;
 
 import com.zq.media.tools.properties.ConfigProperties;
 import feign.RequestInterceptor;
@@ -7,12 +7,13 @@ import org.springframework.context.annotation.Bean;
 /**
  * @author zhaoqiang
  * @version 1.0
- * @date 2024-12-23 17:13
+ * @date 2024-11-12 14:32
  */
-public class FeignTtmConfig {
+public class Feign115Config {
 
     @Bean
     public RequestInterceptor requestInterceptor(ConfigProperties configProperties) {
-        return requestTemplate -> requestTemplate.header("api-key", configProperties.getTtm().getApiKey());
+        return requestTemplate -> requestTemplate.header("Cookie", configProperties.getDriver115().getCookie());
     }
+
 }

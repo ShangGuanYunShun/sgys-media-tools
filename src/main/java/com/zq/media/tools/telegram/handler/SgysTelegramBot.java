@@ -1,13 +1,13 @@
 package com.zq.media.tools.telegram.handler;
 
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.resource.Resource;
-import cn.hutool.core.io.resource.ResourceUtil;
 import com.zq.media.tools.enums.TelegramBotCommand;
 import com.zq.media.tools.properties.TelegramBotProperties;
 import com.zq.media.tools.service.ITelegramBotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.hutool.core.io.file.FileUtil;
+import org.dromara.hutool.core.io.resource.Resource;
+import org.dromara.hutool.core.io.resource.ResourceUtil;
 import org.telegram.telegrambots.longpolling.BotSession;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.AfterBotRegistration;
@@ -52,7 +52,7 @@ public class SgysTelegramBot implements SpringLongPollingBot, LongPollingSingleT
                 case START -> telegramService.sendMessage(chatId, "启动成功");
                 case STOP -> telegramService.sendMessage(chatId, "停止成功");
                 case PIC -> {
-                    Resource resource = ResourceUtil.getResourceObj("static/pic.jpg");
+                    Resource resource = ResourceUtil.getResource("static/pic.jpg");
                     File file = FileUtil.writeFromStream(resource.getStream(), FileUtil.createTempFile(".jpg", true));
                     telegramService.sendFile(chatId, file);
                 }

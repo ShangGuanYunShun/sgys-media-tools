@@ -6,7 +6,7 @@
 
     <groupId>com.zq</groupId>
     <artifactId>sgys-media-tools</artifactId>
-    <version>1.5</version>
+    <version>2.0</version>
 
     <properties>
         <java.version>17</java.version>
@@ -14,7 +14,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <sgys.version>1.0</sgys.version>
+        <sgys.version>2.0</sgys.version>
 
         <telegrambots.version>8.3.0</telegrambots.version>
         <jsoup.version>1.17.2</jsoup.version>
@@ -25,7 +25,7 @@
 
             <dependency>
                 <groupId>com.zq</groupId>
-                <artifactId>sgys-project</artifactId>
+                <artifactId>sgys-dependencies</artifactId>
                 <version>${sgys.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -126,11 +126,16 @@
             <version>${jsoup.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>logging-interceptor</artifactId>
+            <version>4.9.3</version>
+        </dependency>
 
     </dependencies>
 
     <build>
-        <finalName>${project.artifactId}-${version}</finalName>
+        <finalName>${project.artifactId}-${project.version}</finalName>
         <!-- mavne打包动态修改替换配置文件中的占位符 -->
         <resources>
             <resource>
@@ -139,6 +144,17 @@
             <!-- 可以配置引入哪些配置文件includes或排除哪些文件excludes -->
         </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <!-- 启用 -parameters 编译器标志 -->
+                    <compilerArgument>-parameters</compilerArgument>
+                </configuration>
+            </plugin>
             <!-- 打JAR包，不包含依赖文件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -206,7 +222,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.7.18</version>
                 <configuration>
                     <includeSystemScope>true</includeSystemScope>
                     <layout>ZIP</layout>

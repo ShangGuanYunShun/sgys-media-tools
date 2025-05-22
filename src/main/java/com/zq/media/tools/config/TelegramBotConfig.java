@@ -1,6 +1,5 @@
 package com.zq.media.tools.config;
 
-import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zq.media.tools.properties.TelegramBotProperties;
 import com.zq.media.tools.service.ITelegramBotService;
@@ -11,6 +10,7 @@ import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.dromara.hutool.core.text.StrUtil;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -39,7 +39,7 @@ import static java.util.Optional.ofNullable;
 public class TelegramBotConfig {
 
     @Bean
-    public OkHttpClient okClientHttp(HttpLoggingInterceptor loggingInterceptor, TelegramBotProperties telegramBotProperties) {
+    public OkHttpClient okClientHttp(TelegramBotProperties telegramBotProperties) {
         return new CustomHttpProxyOkHttpClientCreator(
                 () -> new Proxy(Proxy.Type.HTTP, new InetSocketAddress(telegramBotProperties.getProxy().getHostname(), telegramBotProperties.getProxy().getPort())),
                 () -> (route, response) -> {
@@ -52,7 +52,7 @@ public class TelegramBotConfig {
                     }
                     return builder.build();
                 },
-                loggingInterceptor
+                new HttpLoggingInterceptor()
         ).get();
     }
 

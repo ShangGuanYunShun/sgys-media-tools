@@ -1,13 +1,19 @@
 spring:
   profiles:
     active: media
+  main:
+    allow-bean-definition-overriding: true
   datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://127.0.0.1:3306/media?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-    url: jdbc:h2:file:./db/media;AUTO_RECONNECT=TRUE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    dynamic:
+      primary: master
+      datasource:
+        master:
+          #    driver-class-name: com.mysql.cj.jdbc.Driver
+          #    url: jdbc:mysql://127.0.0.1:3306/media?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+          url: jdbc:h2:file:./db/media;AUTO_RECONNECT=TRUE
+          username: sa
+          password:
+          driver-class-name: org.h2.Driver
   sql:
     init:
       schema-locations: classpath:config/init.sql
@@ -17,21 +23,30 @@ spring:
       enabled: true
       settings:
         web-allow-others: true
-        web-admin-password: 123456
 
-feign:
-  okhttp:
-    enabled: true
+mybatis-plus:
+  global-config:
+    banner: false
 
-http:
-  logLevel: body
+logging:
+  level:
+    com.zq.media.tools.feign: debug
+    com.zq.core.biz.rpc.interceptor.HttpLoggingInterceptor: debug
+    com.zq.core.web.interceptor.ApiAccessLogInterceptor: debug
 
 ---
 # telegram机器人配置
 telegrambots:
-  enabled: true
+  enabled: false
   token: 81997859:AASSEm9iV_8Q23216xc-dsadBpn2Xwdaysj415aZzc
   chat-id: 56136141
   proxy:
     hostname: 192.168.2.3
     port: 7890
+
+---
+app:
+  web:
+    admin-api:
+      prefix: /
+      controller: "**.controller.admin.**"

@@ -1,9 +1,9 @@
 package com.zq.media.tools.service.impl;
 
-import cn.hutool.core.io.FileTypeUtil;
 import com.zq.media.tools.service.ITelegramBotService;
 import com.zq.media.tools.util.FileUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.hutool.core.io.file.FileTypeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethod;

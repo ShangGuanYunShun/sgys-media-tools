@@ -1,6 +1,6 @@
 package com.zq.media.tools.feign;
 
-import com.zq.media.tools.config.FeignEmbyConfig;
+import com.zq.media.tools.config.feign.FeignEmbyConfig;
 import com.zq.media.tools.dto.resp.emby.ItemRespDTO;
 import com.zq.media.tools.dto.resp.emby.MediaPlaybackInfoRespDTO;
 import feign.Response;

@@ -1,6 +1,7 @@
 package com.zq.media.tools.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.zq.common.enums.IEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -69,6 +70,7 @@ public enum BehaviorType implements IEnum<String> {
     /** 复制文件（未实现） */
     COPY_FILE("copy_file", "复制文件");
 
+    @JsonValue
     private final String code;
     private final String desc;
 

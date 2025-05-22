@@ -1,6 +1,6 @@
 package com.zq.media.tools.util;
 
-import cn.hutool.core.util.ArrayUtil;
+import org.dromara.hutool.core.array.ArrayUtil;
 
 /**
  * @author zhaoqiang

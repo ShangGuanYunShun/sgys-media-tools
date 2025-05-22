@@ -1,13 +1,14 @@
 package com.zq.media.tools.telegram.handler.command;
 
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.RandomUtil;
-import cn.hutool.http.HttpUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.zq.common.util.JsonUtil;
 import com.zq.media.tools.service.ITelegramBotService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.hutool.core.io.file.FileUtil;
+import org.dromara.hutool.core.net.url.UrlEncoder;
+import org.dromara.hutool.core.util.RandomUtil;
+import org.dromara.hutool.http.client.HttpDownloader;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,7 +19,6 @@ import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.File;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,14 +52,14 @@ public class GetImageCommand extends BotCommand {
         }
         String imageUrl = imageUrls.get(RandomUtil.randomInt(imageUrls.size()));
         File file = FileUtil.createTempFile(".jpg", true);
-        HttpUtil.downloadFile(imageUrl, file);
+        HttpDownloader.of(imageUrl).downloadFile(file);
         telegramBotService.sendFile(chat.getId(), file);
     }
 
     @SneakyThrows
     private List<String> fetchImageUrls(String keyword) {
         List<String> imageUrls = new ArrayList<>();
-        String encodedKeyword = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
+        String encodedKeyword = UrlEncoder.encodeQuery(keyword, StandardCharsets.UTF_8);
 
         String url = "https://www.bing.com/images/async?q=" + encodedKeyword +
                 "&first=0&count=20&adlt=off&lostate=r";
