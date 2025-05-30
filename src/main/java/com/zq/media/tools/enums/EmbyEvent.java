@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.zq.common.enums.IEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.dromara.hutool.core.array.ArrayUtil;
 
 /**
  * emby事件
@@ -27,12 +28,7 @@ public enum EmbyEvent implements IEnum<String> {
 
     @JsonCreator
     public static EmbyEvent of(String code) {
-        for (EmbyEvent embyEvent : values()) {
-            if (embyEvent.getCode().equals(code)) {
-                return embyEvent;
-            }
-        }
-        return null;
+        return ArrayUtil.firstMatch(embyEvent -> embyEvent.getCode().equals(code), values());
     }
 
 }

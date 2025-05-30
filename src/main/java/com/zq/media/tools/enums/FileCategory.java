@@ -1,9 +1,11 @@
 package com.zq.media.tools.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.zq.common.enums.IEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.dromara.hutool.core.array.ArrayUtil;
 
 /**
  * 文件类型
@@ -19,16 +21,13 @@ public enum FileCategory implements IEnum<Integer> {
     CATALOG(0, "目录"),
     FILE(1, "文件");
 
+    @JsonValue
     private final Integer code;
     private final String desc;
 
     @JsonCreator
-    public static String of(Integer code) {
-        for (FileCategory item : values()) {
-            if (item.getCode().equals(code)) {
-                return item.getDesc();
-            }
-        }
-        return null;
+    public static FileCategory of(Integer code) {
+        return ArrayUtil.firstMatch(fileCategory -> fileCategory.getCode().equals(code), values());
     }
+
 }

@@ -59,11 +59,10 @@ public class ReceiveNotificationController {
         return Result.success();
     }
 
-    @Operation(summary = "接收来自emby的用户操作通知", tags = "emby通知")
-    @PostMapping("/emby/user")
-    public Result embyFromUser(@RequestBody EmbyNotifyParam embyNotifyParam) {
-//        String content = (String) request.get("body");
-//        receiveNotificationService.receiveQuarkAutoSave(content);
+    @Operation(summary = "接收来自emby的入库通知", tags = "emby通知")
+    @PostMapping("/emby/media")
+    public Result embyFromMedia(@RequestBody EmbyNotifyParam embyNotifyParam) {
+        receiveNotificationService.receiveEmbyMedia(embyNotifyParam);
         return Result.success();
     }
 

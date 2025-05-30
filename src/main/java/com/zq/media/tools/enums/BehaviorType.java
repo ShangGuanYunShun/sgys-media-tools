@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.zq.common.enums.IEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.dromara.hutool.core.array.ArrayUtil;
 
 /**
  * 115生活操作类型
@@ -76,12 +77,8 @@ public enum BehaviorType implements IEnum<String> {
 
     @JsonCreator
     public static BehaviorType of(String code) {
-        for (BehaviorType type : BehaviorType.values()) {
-            if (type.getCode().equals(code)) {
-                return type;
-            }
-        }
-        return null;
+        return ArrayUtil.firstMatch(behaviorType -> behaviorType.getCode().equals(code), values());
     }
+
 }
 

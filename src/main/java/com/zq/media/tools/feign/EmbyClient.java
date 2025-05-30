@@ -1,6 +1,7 @@
 package com.zq.media.tools.feign;
 
 import com.zq.media.tools.config.feign.FeignEmbyConfig;
+import com.zq.media.tools.dto.resp.emby.FavoriteItemsDTO;
 import com.zq.media.tools.dto.resp.emby.ItemRespDTO;
 import com.zq.media.tools.dto.resp.emby.MediaPlaybackInfoRespDTO;
 import feign.Response;
@@ -45,4 +46,12 @@ public interface EmbyClient {
      */
     @GetMapping("/emby/Items/{itemId}/PlaybackInfo")
     MediaPlaybackInfoRespDTO getPlaybackInfo(@PathVariable("itemId") String itemId);
+
+    /**
+     * 获取收藏项目
+     *
+     * @return {@link FavoriteItemsDTO }
+     */
+    @GetMapping("/emby/Users/[userId]/Items?Filters=IsFavorite&IncludeItemTypes=Series&Recursive=true")
+    FavoriteItemsDTO getFavoriteItems();
 }

@@ -30,4 +30,10 @@ public interface IReceiveNotificationService {
      */
     void receiveEmbyFromShenYi(EmbyNotifyParam embyNotifyParam);
 
+    /**
+     * 接收 Emby的通知
+     *
+     * @param embyNotifyParam emby 通知参数
+     */
+    void receiveEmbyMedia(EmbyNotifyParam embyNotifyParam);
 }

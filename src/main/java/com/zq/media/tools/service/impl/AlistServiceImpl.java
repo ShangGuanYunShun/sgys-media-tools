@@ -207,12 +207,13 @@ public class AlistServiceImpl implements IAlistService {
             TimeUnit.SECONDS.sleep(30);
         } catch (InterruptedException ignored) {
         }
-        // 第一次接口通常没反应，需要再调用一次
-        ttmClient.execute(ttmReqDTOList);
-        try {
-            // 等待刮削完成
-            TimeUnit.SECONDS.sleep(configProperties.getTtm().getScrapTime());
-        } catch (InterruptedException ignored) {
+        for (int i = 0; i < 2; i++) {
+            ttmClient.execute(ttmReqDTOList);
+            try {
+                // 等待刮削完成
+                TimeUnit.SECONDS.sleep(configProperties.getTtm().getScrapTime());
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 
@@ -286,7 +287,7 @@ public class AlistServiceImpl implements IAlistService {
         String targetPath = moveFilesToTarget(scrapPath, fileNames);
 
         // 非115网盘触发生成strm和下载文件
-        if (!scrapPath.contains("115网盘")) {
+        if (!scrapPath.contains("115")) {
             // 生成strm和下载文件
             for (String fileName : fileNames) {
                 createStrmAndDownloadFile(Paths.get(targetPath + "/" + fileName));

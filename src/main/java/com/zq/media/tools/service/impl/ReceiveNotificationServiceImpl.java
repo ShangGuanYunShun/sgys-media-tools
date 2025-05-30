@@ -6,6 +6,7 @@ import com.zq.media.tools.dto.HandleFileDTO;
 import com.zq.media.tools.dto.req.alist.DeleteFileReqDTO;
 import com.zq.media.tools.dto.req.alist.ListFileReqDTO;
 import com.zq.media.tools.dto.resp.alist.listFileRespDTO;
+import com.zq.media.tools.dto.resp.emby.FavoriteItemsDTO;
 import com.zq.media.tools.dto.resp.emby.ItemRespDTO;
 import com.zq.media.tools.dto.resp.emby.MediaPlaybackInfoRespDTO;
 import com.zq.media.tools.enums.EmbyMediaType;
@@ -41,8 +42,7 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.zq.common.util.CollectionUtil.anyMatch;
-import static com.zq.common.util.CollectionUtil.convertList;
+import static com.zq.common.util.CollectionUtil.*;
 
 /**
  * @author zhaoqiang
@@ -169,28 +169,22 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
     }
 
     /**
-     * 片头片尾跳过更新
+     * 接收 Emby的通知
      *
      * @param embyNotifyParam emby 通知参数
      */
-    private void introSkipUpdate(EmbyNotifyParam embyNotifyParam) {
-        String introSkipUpdate = "片头";
-        if (embyNotifyParam.getDescription().contains("片尾标记")) {
-            introSkipUpdate = "片尾";
+    @Override
+    public void receiveEmbyMedia(EmbyNotifyParam embyNotifyParam) {
+        FavoriteItemsDTO favoriteItems = embyClient.getFavoriteItems();
+        Set<String> mediaIds = convertSet(favoriteItems.getItems(), FavoriteItemsDTO.ItemDTO::getId);
+        if (mediaIds.contains(embyNotifyParam.getItem().getSeriesId())) {
+            return;
         }
-        StringJoiner messageJoiner = new StringJoiner("\n");
-        messageJoiner.add(StrUtil.format("#{}更新 #{} #{}", introSkipUpdate, embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
-        messageJoiner.add(embyNotifyParam.getDescription());
-        telegramService.sendMessage(telegramBotProperties.getChatId(), messageJoiner.toString());
+        mediaUpdate(embyNotifyParam, "影视入库");
     }
 
-    /**
-     * 最爱更新
-     *
-     * @param embyNotifyParam emby 通知参数
-     */
     @SneakyThrows
-    private void favoritesUpdate(EmbyNotifyParam embyNotifyParam) {
+    private void mediaUpdate(EmbyNotifyParam embyNotifyParam, String notificationTitle) {
         ItemRespDTO itemInfo = embyClient.getItem(embyNotifyParam.getItem().getSeriesId());
         MediaPlaybackInfoRespDTO mediaPlaybackInfoRespDTO = embyClient.getPlaybackInfo(embyNotifyParam.getItem().getId());
         MediaPlaybackInfoRespDTO.MediaSource mediaSource = mediaPlaybackInfoRespDTO.getMediaSources().get(0);
@@ -198,7 +192,7 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
         String bitrateStr = MediaUtil.formatBitrate(mediaSource.getBitrate());
 
         StringJoiner messageJoiner = new StringJoiner("\n");
-        messageJoiner.add(StrUtil.format("#最爱更新 #{} #{}", embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
+        messageJoiner.add(StrUtil.format("#{} #{} #{}\"", notificationTitle, embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
         messageJoiner.add("\\[" + embyNotifyParam.getItem().getType().getDesc() + "]");
         appendSeriesInfo(embyNotifyParam, messageJoiner);
         messageJoiner.add("视频大小：" + sizeStr);
@@ -225,6 +219,33 @@ public class ReceiveNotificationServiceImpl implements IReceiveNotificationServi
                 response.close();
             }
         }
+    }
+
+    /**
+     * 片头片尾跳过更新
+     *
+     * @param embyNotifyParam emby 通知参数
+     */
+    private void introSkipUpdate(EmbyNotifyParam embyNotifyParam) {
+        String introSkipUpdate = "片头";
+        if (embyNotifyParam.getDescription().contains("片尾标记")) {
+            introSkipUpdate = "片尾";
+            return;
+        }
+        StringJoiner messageJoiner = new StringJoiner("\n");
+        messageJoiner.add(StrUtil.format("#{}更新 #{} #{}", introSkipUpdate, embyNotifyParam.getItem().getSeriesName(), embyNotifyParam.getServer().getName()));
+        messageJoiner.add(embyNotifyParam.getDescription());
+        telegramService.sendMessage(telegramBotProperties.getChatId(), messageJoiner.toString());
+    }
+
+    /**
+     * 最爱更新
+     *
+     * @param embyNotifyParam emby 通知参数
+     */
+    @SneakyThrows
+    private void favoritesUpdate(EmbyNotifyParam embyNotifyParam) {
+        mediaUpdate(embyNotifyParam, "最爱更新");
     }
 
     private static void appendSeriesInfo(EmbyNotifyParam embyNotifyParam, StringJoiner messageJoiner) {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.zq.common.enums.IEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.dromara.hutool.core.array.ArrayUtil;
 
 /**
  * emby媒体类型
@@ -27,12 +28,7 @@ public enum EmbyMediaType implements IEnum<String> {
 
     @JsonCreator
     public static EmbyMediaType of(String code) {
-        for (EmbyMediaType value : values()) {
-            if (value.getCode().equals(code)) {
-                return value;
-            }
-        }
-        return null;
+        return ArrayUtil.firstMatch(mediaType -> mediaType.getCode().equals(code), values());
     }
 
 }
