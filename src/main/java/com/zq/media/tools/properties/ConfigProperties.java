@@ -205,6 +205,11 @@ public class ConfigProperties {
          * 刮削时间：秒
          */
         private Integer scrapTime = 300;
+
+        /**
+         * 是否启用了重命名
+         */
+        private Boolean enableRename = true;
     }
 
     @Getter

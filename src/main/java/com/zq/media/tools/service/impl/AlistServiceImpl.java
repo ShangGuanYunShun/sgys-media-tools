@@ -200,20 +200,18 @@ public class AlistServiceImpl implements IAlistService {
         ttmReqDTOList.add(ttmReqDTO);
         ttmReqDTO = new TtmReqDTO();
         ttmReqDTO.setAction(TtmAction.SCRAPE)
-                .setScope(new TtmReqDTO.Scope(TtmScopeName.UN_SCRAPED, new ArrayList<>()));
+                .setScope(new TtmReqDTO.Scope(TtmScopeName.NEW, new ArrayList<>()));
         ttmReqDTOList.add(ttmReqDTO);
         ttmClient.execute(ttmReqDTOList);
         try {
             TimeUnit.SECONDS.sleep(30);
         } catch (InterruptedException ignored) {
         }
-        for (int i = 0; i < 2; i++) {
-            ttmClient.execute(ttmReqDTOList);
-            try {
-                // 等待刮削完成
-                TimeUnit.SECONDS.sleep(configProperties.getTtm().getScrapTime());
-            } catch (InterruptedException ignored) {
-            }
+        ttmClient.execute(ttmReqDTOList);
+        try {
+            // 等待刮削完成
+            TimeUnit.SECONDS.sleep(configProperties.getTtm().getScrapTime());
+        } catch (InterruptedException ignored) {
         }
     }
 
@@ -273,6 +271,8 @@ public class AlistServiceImpl implements IAlistService {
         }
 
         if (configProperties.getTtm().getEnabled()) {
+            // 刷新目录
+            alistClient.listFile(new ListFileReqDTO(scrapPath, true));
             // 刮削文件
             log.info("刮削文件：{}", scrapPath);
             scrap();
@@ -280,7 +280,17 @@ public class AlistServiceImpl implements IAlistService {
 
         Result<listFileRespDTO> listFileResult = alistClient.listFile(new ListFileReqDTO(scrapPath, true));
         Set<String> fileNames = convertSet(listFileResult.getCheckedData().getContent(),
-                content -> !"season.nfo".equals(content.getName()),
+                content -> {
+                    if ("season.nfo".equals(content.getName())) {
+                        return false;
+                    }
+                    // 强迫症福音，过滤掉无用文件：ttm刮削之后，文件名会变成  剧集名-episodes-XXX
+                    if (configProperties.getTtm().getEnableRename()) {
+                        String episodes = MediaUtil.getEpisodes(content.getName());
+                        return content.getName().startsWith(seriesName + " - " + episodes);
+                    }
+                    return true;
+                },
                 listFileRespDTO.Content::getName);
 
         // 移动文件到目标目录
